@@ -12,7 +12,7 @@ const WORD_CATEGORIES = {
   Quality: ['professional', 'excellent', 'quality', 'great', 'thorough'],
   Service: ['helpful', 'courteous', 'responsive', 'service', 'friendly'],
   Technical: ['attic', 'foam', 'efficient'],
-  Performance: ['temperature', 'comfort', 'energy', 'cooling', 'heating'],
+  Performance: ['temperature', 'comfort', 'energy', 'cooling', 'heating', 'comfortable'],
 };
 
 // Words to focus on that convey praise and compliments
@@ -20,7 +20,9 @@ const PRAISE_WORDS = [
   'professional', 'excellent', 'great', 'quality', 'thorough', 
   'knowledgeable', 'courteous', 'responsive', 'fantastic', 'helpful',
   'amazing', 'impressed', 'recommend', 'efficient', 'friendly',
-  'outstanding', 'perfect', 'awesome', 'wonderful', 'exceptional'
+  'outstanding', 'perfect', 'awesome', 'wonderful', 'exceptional',
+  // Adding performance-related words
+  'temperature', 'comfort', 'energy', 'cooling', 'heating', 'comfortable'
 ];
 
 // Words to exclude from word frequency chart
