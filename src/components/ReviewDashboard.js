@@ -35,6 +35,53 @@ const ReviewDashboard = () => {
     Performance: ['temperature', 'comfort', 'energy', 'cooling', 'heating'],
   };
 
+  const calculateStats = useCallback((reviewData) => {
+    const total = reviewData.length;
+    if (total === 0) return;
+    
+    const fiveStar = reviewData.filter(r => r.ratingNum === 5).length;
+    const fourStar = reviewData.filter(r => r.ratingNum === 4).length;
+    const threeStar = reviewData.filter(r => r.ratingNum === 3).length;
+    const twoStar = reviewData.filter(r => r.ratingNum === 2).length;
+    const oneStar = reviewData.filter(r => r.ratingNum === 1).length;
+    
+    const avgRating = reviewData.reduce((sum, r) => sum + r.ratingNum, 0) / total;
+    
+    setStats({
+      averageRating: avgRating.toFixed(1),
+      totalReviews: total,
+      fiveStarCount: fiveStar,
+      fourStarCount: fourStar,
+      threeStarCount: threeStar,
+      twoStarCount: twoStar,
+      oneStarCount: oneStar,
+    });
+  }, []);
+
+  const calculateWordFrequencies = useCallback((reviewData) => {
+    const text = reviewData.map(r => r["Review Text"] || "").join(' ').toLowerCase();
+    const words = text.split(/\s+/).filter(w => w.length > 3);
+    
+    const stopWords = ['this', 'that', 'they', 'their', 'there', 'were', 'with', 'from', 'have', 'very', 'would', 'about', 'also'];
+    
+    const wordCount = {};
+    words.forEach(word => {
+      // Remove punctuation and only count words with letters
+      const cleanWord = word.replace(/[^\w\s]/gi, '');
+      if (cleanWord && cleanWord.length > 3 && !stopWords.includes(cleanWord) && /[a-zA-Z]/.test(cleanWord)) {
+        wordCount[cleanWord] = (wordCount[cleanWord] || 0) + 1;
+      }
+    });
+    
+    // Convert to array and sort
+    const wordFreqArray = Object.entries(wordCount)
+      .map(([word, count]) => ({ word, count }))
+      .sort((a, b) => b.count - a.count)
+      .slice(0, 20);
+    
+    setWordFrequencies(wordFreqArray);
+  }, []);
+
   useEffect(() => {
     const loadReviews = async () => {
       try {
@@ -92,52 +139,7 @@ const ReviewDashboard = () => {
     };
 
     loadReviews();
-  }, []);
-
-  const calculateStats = useCallback((reviewData) => {
-    const total = reviewData.length;
-    const fiveStar = reviewData.filter(r => r.ratingNum === 5).length;
-    const fourStar = reviewData.filter(r => r.ratingNum === 4).length;
-    const threeStar = reviewData.filter(r => r.ratingNum === 3).length;
-    const twoStar = reviewData.filter(r => r.ratingNum === 2).length;
-    const oneStar = reviewData.filter(r => r.ratingNum === 1).length;
-    
-    const avgRating = reviewData.reduce((sum, r) => sum + r.ratingNum, 0) / total;
-    
-    setStats({
-      averageRating: avgRating.toFixed(1),
-      totalReviews: total,
-      fiveStarCount: fiveStar,
-      fourStarCount: fourStar,
-      threeStarCount: threeStar,
-      twoStarCount: twoStar,
-      oneStarCount: oneStar,
-    });
-  }, []);
-
-  const calculateWordFrequencies = useCallback((reviewData) => {
-    const text = reviewData.map(r => r["Review Text"]).join(' ').toLowerCase();
-    const words = text.split(/\s+/).filter(w => w.length > 3);
-    
-    const stopWords = ['this', 'that', 'they', 'their', 'there', 'were', 'with', 'from', 'have', 'very', 'would', 'about', 'also'];
-    
-    const wordCount = {};
-    words.forEach(word => {
-      // Remove punctuation and only count words with letters
-      const cleanWord = word.replace(/[^\w\s]/gi, '');
-      if (cleanWord && cleanWord.length > 3 && !stopWords.includes(cleanWord) && /[a-zA-Z]/.test(cleanWord)) {
-        wordCount[cleanWord] = (wordCount[cleanWord] || 0) + 1;
-      }
-    });
-    
-    // Convert to array and sort
-    const wordFreqArray = Object.entries(wordCount)
-      .map(([word, count]) => ({ word, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 20);
-    
-    setWordFrequencies(wordFreqArray);
-  }, []);
+  }, [calculateStats, calculateWordFrequencies]);
 
   const filterReviews = useCallback(() => {
     let filtered = [...reviews];
@@ -211,7 +213,7 @@ const ReviewDashboard = () => {
       );
       setWordFrequencies(filteredFrequencies);
     }
-  }, [reviews, searchTerm, sortField, sortDirection, dateRange, ratingFilter, wordCategory, wordFrequencies, wordCategories, calculateStats, calculateWordFrequencies]);
+  }, [reviews, searchTerm, sortField, sortDirection, dateRange, ratingFilter, wordCategory, calculateStats, calculateWordFrequencies, wordFrequencies, wordCategories]);
 
   useEffect(() => {
     filterReviews();
