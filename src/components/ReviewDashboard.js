@@ -7,6 +7,14 @@ import { Search, Star, Filter, ArrowUpDown, Calendar, HelpCircle } from 'lucide-
 import Papa from 'papaparse';
 import reviewsData from '../data/reviews.csv';
 
+// Move wordCategories outside the component so it doesn't get recreated on each render
+const WORD_CATEGORIES = {
+  Quality: ['professional', 'excellent', 'quality', 'great', 'thorough'],
+  Service: ['helpful', 'courteous', 'responsive', 'service', 'friendly'],
+  Technical: ['insulation', 'attic', 'foam', 'efficient', 'installation'],
+  Performance: ['temperature', 'comfort', 'energy', 'cooling', 'heating'],
+};
+
 const ReviewDashboard = () => {
   const [reviews, setReviews] = useState([]);
   const [filteredReviews, setFilteredReviews] = useState([]);
@@ -27,13 +35,6 @@ const ReviewDashboard = () => {
     twoStarCount: 0,
     oneStarCount: 0,
   });
-
-  const wordCategories = {
-    Quality: ['professional', 'excellent', 'quality', 'great', 'thorough'],
-    Service: ['helpful', 'courteous', 'responsive', 'service', 'friendly'],
-    Technical: ['insulation', 'attic', 'foam', 'efficient', 'installation'],
-    Performance: ['temperature', 'comfort', 'energy', 'cooling', 'heating'],
-  };
 
   const calculateStats = useCallback((reviewData) => {
     const total = reviewData.length;
@@ -169,7 +170,7 @@ const ReviewDashboard = () => {
     
     // Apply word category filter
     if (wordCategory !== 'All') {
-      const categoryWords = wordCategories[wordCategory];
+      const categoryWords = WORD_CATEGORIES[wordCategory];
       filtered = filtered.filter(review => {
         if (!review["Review Text"]) return false;
         const reviewText = review["Review Text"].toLowerCase();
@@ -207,13 +208,13 @@ const ReviewDashboard = () => {
       calculateWordFrequencies(filtered);
     } else {
       // Filter word frequencies by category
-      const categoryWords = wordCategories[wordCategory];
+      const categoryWords = WORD_CATEGORIES[wordCategory];
       const filteredFrequencies = wordFrequencies.filter(item => 
         categoryWords.includes(item.word)
       );
       setWordFrequencies(filteredFrequencies);
     }
-  }, [reviews, searchTerm, sortField, sortDirection, dateRange, ratingFilter, wordCategory, calculateStats, calculateWordFrequencies, wordFrequencies, wordCategories]);
+  }, [reviews, searchTerm, sortField, sortDirection, dateRange, ratingFilter, wordCategory, calculateStats, calculateWordFrequencies, wordFrequencies]);
 
   useEffect(() => {
     filterReviews();
