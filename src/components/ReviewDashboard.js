@@ -466,7 +466,7 @@ const ReviewDashboard = () => {
       
       {/* Word Frequency Chart - Now With Praise Words Only */}
       <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <h2 className="text-xl font-semibold mb-4">Top Praise & Compliment Words</h2>
+        <h2 className="text-xl font-semibold mb-4">Sentiment Analysis on Our Google Reviews</h2>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
