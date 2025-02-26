@@ -36,6 +36,7 @@ const ReviewDashboard = () => {
   const [reviews, setReviews] = useState([]);
   const [filteredReviews, setFilteredReviews] = useState([]);
   const [wordFrequencies, setWordFrequencies] = useState([]);
+  const [originalWordFrequencies, setOriginalWordFrequencies] = useState([]);
   const [wordCategory, setWordCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState('Date');
@@ -109,6 +110,7 @@ const ReviewDashboard = () => {
       .slice(0, 10); // Limit to top 10
     
     setWordFrequencies(wordFreqArray);
+    setOriginalWordFrequencies(wordFreqArray); // Save the original for filtering
   }, []);
 
   useEffect(() => {
@@ -170,6 +172,20 @@ const ReviewDashboard = () => {
     loadReviews();
   }, [calculateStats, calculateWordFrequencies]);
 
+  const handleCategoryChange = useCallback((category) => {
+    setWordCategory(category);
+    
+    if (category === 'All') {
+      setWordFrequencies(originalWordFrequencies);
+    } else {
+      const categoryWords = WORD_CATEGORIES[category];
+      const filteredFrequencies = originalWordFrequencies.filter(item => 
+        categoryWords.includes(item.word)
+      );
+      setWordFrequencies(filteredFrequencies);
+    }
+  }, [originalWordFrequencies]);
+
   const filterReviews = useCallback(() => {
     let filtered = [...reviews];
     
@@ -230,22 +246,7 @@ const ReviewDashboard = () => {
     
     // Recalculate stats for filtered reviews
     calculateStats(filtered);
-    
-    // If word category changed, don't recalculate word frequencies
-    if (wordCategory === 'All') {
-      calculateWordFrequencies(filtered);
-    } else {
-      // Filter word frequencies by category
-      const categoryWords = WORD_CATEGORIES[wordCategory];
-      
-      // Create a filtered word frequencies array based on both praise words and category
-      const filtered = wordFrequencies.filter(item => 
-        PRAISE_WORDS.includes(item.word) && categoryWords.includes(item.word)
-      );
-      
-      setWordFrequencies(filtered);
-    }
-  }, [reviews, searchTerm, sortField, sortDirection, dateRange, ratingFilter, wordCategory, calculateStats, calculateWordFrequencies, wordFrequencies]);
+  }, [reviews, searchTerm, sortField, sortDirection, dateRange, ratingFilter, wordCategory, calculateStats]);
 
   useEffect(() => {
     filterReviews();
@@ -326,31 +327,31 @@ const ReviewDashboard = () => {
             <div className="flex flex-wrap gap-2">
               <button 
                 className={getWordCategoryClass('All')}
-                onClick={() => setWordCategory('All')}
+                onClick={() => handleCategoryChange('All')}
               >
                 All
               </button>
               <button 
                 className={getWordCategoryClass('Quality')}
-                onClick={() => setWordCategory('Quality')}
+                onClick={() => handleCategoryChange('Quality')}
               >
                 Quality
               </button>
               <button 
                 className={getWordCategoryClass('Service')}
-                onClick={() => setWordCategory('Service')}
+                onClick={() => handleCategoryChange('Service')}
               >
                 Service
               </button>
               <button 
                 className={getWordCategoryClass('Technical')}
-                onClick={() => setWordCategory('Technical')}
+                onClick={() => handleCategoryChange('Technical')}
               >
                 Technical
               </button>
               <button 
                 className={getWordCategoryClass('Performance')}
-                onClick={() => setWordCategory('Performance')}
+                onClick={() => handleCategoryChange('Performance')}
               >
                 Performance
               </button>
@@ -464,9 +465,9 @@ const ReviewDashboard = () => {
         </div>
       </div>
       
-      {/* Word Frequency Chart - Now With Praise Words Only */}
+      {/* Word Frequency Chart */}
       <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <h2 className="text-xl font-semibold mb-4">Sentiment Analysis on Our Google Reviews</h2>
+        <h2 className="text-xl font-semibold mb-4">Word Frequency Analysis</h2>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
