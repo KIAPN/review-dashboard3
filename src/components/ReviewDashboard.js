@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, PieChart, Pie, Cell, ResponsiveContainer
@@ -94,11 +94,7 @@ const ReviewDashboard = () => {
     loadReviews();
   }, []);
 
-  useEffect(() => {
-    filterReviews();
-  }, [searchTerm, sortField, sortDirection, dateRange, ratingFilter, wordCategory, reviews]);
-
-  const calculateStats = (reviewData) => {
+  const calculateStats = useCallback((reviewData) => {
     const total = reviewData.length;
     const fiveStar = reviewData.filter(r => r.ratingNum === 5).length;
     const fourStar = reviewData.filter(r => r.ratingNum === 4).length;
@@ -117,9 +113,9 @@ const ReviewDashboard = () => {
       twoStarCount: twoStar,
       oneStarCount: oneStar,
     });
-  };
+  }, []);
 
-  const calculateWordFrequencies = (reviewData) => {
+  const calculateWordFrequencies = useCallback((reviewData) => {
     const text = reviewData.map(r => r["Review Text"]).join(' ').toLowerCase();
     const words = text.split(/\s+/).filter(w => w.length > 3);
     
@@ -141,9 +137,9 @@ const ReviewDashboard = () => {
       .slice(0, 20);
     
     setWordFrequencies(wordFreqArray);
-  };
+  }, []);
 
-  const filterReviews = () => {
+  const filterReviews = useCallback(() => {
     let filtered = [...reviews];
     
     // Apply search term filter
@@ -215,7 +211,11 @@ const ReviewDashboard = () => {
       );
       setWordFrequencies(filteredFrequencies);
     }
-  };
+  }, [reviews, searchTerm, sortField, sortDirection, dateRange, ratingFilter, wordCategory, wordFrequencies, wordCategories, calculateStats, calculateWordFrequencies]);
+
+  useEffect(() => {
+    filterReviews();
+  }, [filterReviews]);
 
   const handleSort = (field) => {
     setSortDirection(sortField === field && sortDirection === 'desc' ? 'asc' : 'desc');
