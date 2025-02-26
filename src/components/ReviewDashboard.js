@@ -15,11 +15,21 @@ const WORD_CATEGORIES = {
   Performance: ['temperature', 'comfort', 'energy', 'cooling', 'heating'],
 };
 
+// Words to focus on that convey praise and compliments
+const PRAISE_WORDS = [
+  'professional', 'excellent', 'great', 'quality', 'thorough', 
+  'knowledgeable', 'courteous', 'responsive', 'fantastic', 'helpful',
+  'amazing', 'impressed', 'recommend', 'efficient', 'friendly',
+  'outstanding', 'perfect', 'awesome', 'wonderful', 'exceptional'
+];
+
 // Words to exclude from word frequency chart
 const EXCLUDED_WORDS = [
   'insulation', 'koala', 'work', 'team', 'installation', 'them', 'after', 
   'done', 'time', 'aldrick', 'mike', 'home', 'they', 'their', 'there', 
-  'were', 'with', 'from', 'have', 'very', 'would', 'about', 'also'
+  'were', 'with', 'from', 'have', 'very', 'would', 'about', 'also',
+  'that', 'this', 'what', 'just', 'your', 'will', 'some', 'when', 'into',
+  'only', 'then', 'than', 'should', 'could', 'house', 'attic', 'foam'
 ];
 
 const ReviewDashboard = () => {
@@ -71,6 +81,8 @@ const ReviewDashboard = () => {
     const words = text.split(/\s+/).filter(w => w.length > 3);
     
     const wordCount = {};
+    
+    // First pass - count all words
     words.forEach(word => {
       // Remove punctuation and only count words with letters
       const cleanWord = word.replace(/[^\w\s]/gi, '');
@@ -82,11 +94,19 @@ const ReviewDashboard = () => {
       }
     });
     
+    // Second pass - filter to only include praise words
+    const praiseWordCounts = {};
+    Object.keys(wordCount).forEach(word => {
+      if (PRAISE_WORDS.includes(word)) {
+        praiseWordCounts[word] = wordCount[word];
+      }
+    });
+    
     // Convert to array and sort
-    const wordFreqArray = Object.entries(wordCount)
+    const wordFreqArray = Object.entries(praiseWordCounts)
       .map(([word, count]) => ({ word, count }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, 20);
+      .slice(0, 10); // Limit to top 10
     
     setWordFrequencies(wordFreqArray);
   }, []);
@@ -217,10 +237,13 @@ const ReviewDashboard = () => {
     } else {
       // Filter word frequencies by category
       const categoryWords = WORD_CATEGORIES[wordCategory];
-      const filteredFrequencies = wordFrequencies.filter(item => 
-        categoryWords.includes(item.word)
+      
+      // Create a filtered word frequencies array based on both praise words and category
+      const filtered = wordFrequencies.filter(item => 
+        PRAISE_WORDS.includes(item.word) && categoryWords.includes(item.word)
       );
-      setWordFrequencies(filteredFrequencies);
+      
+      setWordFrequencies(filtered);
     }
   }, [reviews, searchTerm, sortField, sortDirection, dateRange, ratingFilter, wordCategory, calculateStats, calculateWordFrequencies, wordFrequencies]);
 
@@ -441,9 +464,9 @@ const ReviewDashboard = () => {
         </div>
       </div>
       
-      {/* Word Frequency Chart - Now Full Width */}
+      {/* Word Frequency Chart - Now With Praise Words Only */}
       <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <h2 className="text-xl font-semibold mb-4">Word Frequency Analysis</h2>
+        <h2 className="text-xl font-semibold mb-4">Top Praise & Compliment Words</h2>
         <div className="h-80">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
