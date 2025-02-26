@@ -1,0 +1,48 @@
+{
+  "name": "koala-reviews-dashboard",
+  "version": "1.0.0",
+  "private": true,
+  "dependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "recharts": "^2.10.3",
+    "lucide-react": "^0.299.0",
+    "papaparse": "^5.4.1",
+    "tailwindcss": "^3.3.6",
+    "react-scripts": "5.0.1"
+  },
+  "scripts": {
+    "start": "react-scripts start",
+    "build": "react-scripts build",
+    "test": "react-scripts test",
+    "eject": "react-scripts eject",
+    "prepare-data": "node scripts/convert-csv.js",
+    "docker:build": "docker build -t koala-reviews-dashboard .",
+    "docker:run": "docker run -p 8080:80 koala-reviews-dashboard",
+    "compose:up": "docker-compose up",
+    "compose:build": "docker-compose build",
+    "deploy:netlify": "npm run build && netlify deploy --prod"
+  },
+  "eslintConfig": {
+    "extends": [
+      "react-app"
+    ]
+  },
+  "browserslist": {
+    "production": [
+      ">0.2%",
+      "not dead",
+      "not op_mini all"
+    ],
+    "development": [
+      "last 1 chrome version",
+      "last 1 firefox version",
+      "last 1 safari version"
+    ]
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.16",
+    "netlify-cli": "^17.11.0",
+    "postcss": "^8.4.32"
+  }
+}
