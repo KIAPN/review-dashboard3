@@ -1,0 +1,32 @@
+version: '3.8'
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    volumes:
+      - ./src:/app/src
+      - ./public:/app/public
+    environment:
+      - NODE_ENV=development
+    # For development, use this instead of the build directive:
+    # image: node:18-alpine
+    # command: npm start
+    # ports:
+    #   - "3000:3000"
+
+  # Optional: Add a service for easier deployment to netlify
+  netlify:
+    image: node:18-alpine
+    working_dir: /app
+    volumes:
+      - .:/app
+    command: >
+      sh -c "npm install -g netlify-cli &&
+             npm install &&
+             netlify deploy --dir=build"
+    profiles:
+      - deploy
