@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, PieChart, Pie, Cell, ResponsiveContainer
+  Tooltip, ResponsiveContainer
 } from 'recharts';
 import { Search, Star, Filter, ArrowUpDown, Calendar, HelpCircle } from 'lucide-react';
 import Papa from 'papaparse';
@@ -11,9 +11,16 @@ import reviewsData from '../data/reviews.csv';
 const WORD_CATEGORIES = {
   Quality: ['professional', 'excellent', 'quality', 'great', 'thorough'],
   Service: ['helpful', 'courteous', 'responsive', 'service', 'friendly'],
-  Technical: ['insulation', 'attic', 'foam', 'efficient', 'installation'],
+  Technical: ['attic', 'foam', 'efficient'],
   Performance: ['temperature', 'comfort', 'energy', 'cooling', 'heating'],
 };
+
+// Words to exclude from word frequency chart
+const EXCLUDED_WORDS = [
+  'insulation', 'koala', 'work', 'team', 'installation', 'them', 'after', 
+  'done', 'time', 'aldrick', 'mike', 'home', 'they', 'their', 'there', 
+  'were', 'with', 'from', 'have', 'very', 'would', 'about', 'also'
+];
 
 const ReviewDashboard = () => {
   const [reviews, setReviews] = useState([]);
@@ -63,13 +70,14 @@ const ReviewDashboard = () => {
     const text = reviewData.map(r => r["Review Text"] || "").join(' ').toLowerCase();
     const words = text.split(/\s+/).filter(w => w.length > 3);
     
-    const stopWords = ['this', 'that', 'they', 'their', 'there', 'were', 'with', 'from', 'have', 'very', 'would', 'about', 'also'];
-    
     const wordCount = {};
     words.forEach(word => {
       // Remove punctuation and only count words with letters
       const cleanWord = word.replace(/[^\w\s]/gi, '');
-      if (cleanWord && cleanWord.length > 3 && !stopWords.includes(cleanWord) && /[a-zA-Z]/.test(cleanWord)) {
+      if (cleanWord && 
+          cleanWord.length > 3 && 
+          !EXCLUDED_WORDS.includes(cleanWord) && 
+          /[a-zA-Z]/.test(cleanWord)) {
         wordCount[cleanWord] = (wordCount[cleanWord] || 0) + 1;
       }
     });
@@ -268,16 +276,6 @@ const ReviewDashboard = () => {
       : 'bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-1 px-3 rounded-full mr-2';
   };
 
-  const getPieChartData = () => [
-    { name: '5 Stars', value: stats.fiveStarCount },
-    { name: '4 Stars', value: stats.fourStarCount },
-    { name: '3 Stars', value: stats.threeStarCount },
-    { name: '2 Stars', value: stats.twoStarCount },
-    { name: '1 Star', value: stats.oneStarCount },
-  ];
-
-  const pieColors = ['#4CAF50', '#8BC34A', '#FFC107', '#FF9800', '#F44336'];
-
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
@@ -443,56 +441,28 @@ const ReviewDashboard = () => {
         </div>
       </div>
       
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Word Frequency */}
-        <div className="bg-white rounded-lg shadow p-4 lg:col-span-2">
-          <h2 className="text-xl font-semibold mb-4">Word Frequency Analysis</h2>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={wordFrequencies}
-                layout="vertical"
-                margin={{ top: 5, right: 30, left: 70, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis type="number" />
-                <YAxis 
-                  type="category" 
-                  dataKey="word" 
-                  width={80}
-                  tick={{ fontSize: 12 }}
-                />
-                <Tooltip formatter={(value) => [`${value} mentions`, 'Frequency']} />
-                <Bar dataKey="count" fill="#4299e1" />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-        </div>
-        
-        {/* Rating Distribution */}
-        <div className="bg-white rounded-lg shadow p-4">
-          <h2 className="text-xl font-semibold mb-4">Rating Distribution</h2>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={getPieChartData()}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  outerRadius={80}
-                  dataKey="value"
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                >
-                  {getPieChartData().map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
-                  ))}
-                </Pie>
-                <Tooltip formatter={(value) => [`${value} reviews`, '']} />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+      {/* Word Frequency Chart - Now Full Width */}
+      <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <h2 className="text-xl font-semibold mb-4">Word Frequency Analysis</h2>
+        <div className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={wordFrequencies}
+              layout="vertical"
+              margin={{ top: 5, right: 30, left: 70, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" />
+              <YAxis 
+                type="category" 
+                dataKey="word" 
+                width={80}
+                tick={{ fontSize: 12 }}
+              />
+              <Tooltip formatter={(value) => [`${value} mentions`, 'Frequency']} />
+              <Bar dataKey="count" fill="#4299e1" />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
       
