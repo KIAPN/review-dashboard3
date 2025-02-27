@@ -1,30 +1,111 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Add these styles to your index.css or create a new CSS file and import it */
 
+/* Import fonts that match Koala's brand guidelines */
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;700&display=swap'); /* Similar to Filson */
 @import url('https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@300;400;500;700&display=swap');
 
+/* Reset and base styles */
 body {
   margin: 0;
-  font-family: 'Alegreya Sans', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+  padding: 0;
+  font-family: 'Montserrat', sans-serif; /* Primary font */
+  color: #333;
+  background-color: #f9f9f9;
 }
 
 h1, h2, h3, h4, h5, h6 {
-  font-family: 'Alegreya Sans', sans-serif;
-  font-weight: 700;
+  font-family: 'Alegreya Sans', sans-serif; /* Secondary font for headings */
+  margin-top: 0;
 }
 
-.koala-gradient {
-  background: linear-gradient(to right, #95C93D, #7EB4A3, #73AADC);
+/* Koala Brand Colors */
+:root {
+  --koala-green: #95C93D;
+  --koala-teal: #7EB4A3;
+  --koala-blue: #73AADC;
+  --koala-dark-blue: #043968;
+  --koala-light-green: #e9f5d3;
+  --koala-light-teal: #e3f0eb;
+  --koala-light-blue: #e2eef8;
 }
 
-.koala-shadow {
-  box-shadow: 0 4px 6px -1px rgba(149, 201, 61, 0.1), 0 2px 4px -1px rgba(115, 170, 220, 0.06);
+/* Button styles */
+button {
+  transition: all 0.2s ease;
 }
 
-code {
-  font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
-    monospace;
+button:hover {
+  opacity: 0.9;
+}
+
+/* Custom scrollbar for the reviews table */
+.overflow-y-auto::-webkit-scrollbar {
+  width: 8px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb {
+  background: var(--koala-teal);
+  border-radius: 10px;
+}
+
+.overflow-y-auto::-webkit-scrollbar-thumb:hover {
+  background: var(--koala-green);
+}
+
+/* Table row hover effect */
+.review-row:hover {
+  background-color: var(--koala-light-green) !important;
+}
+
+/* Chart tooltip customization */
+.recharts-tooltip-wrapper .recharts-default-tooltip {
+  background-color: white !important;
+  border: 1px solid var(--koala-teal) !important;
+  border-radius: 5px !important;
+}
+
+/* Rating stars animation */
+.star-rating span {
+  transition: transform 0.2s ease;
+}
+
+.star-rating:hover span {
+  transform: scale(1.1);
+}
+
+/* Card hover effects */
+.dashboard-card {
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.dashboard-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+}
+
+/* Filter buttons transition */
+.filter-button {
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* Custom focus styles for inputs */
+input:focus, select:focus {
+  border-color: var(--koala-green) !important;
+  box-shadow: 0 0 0 3px rgba(149, 201, 61, 0.2) !important;
+  outline: none;
+}
+
+/* Footer link hover effect */
+footer a {
+  transition: color 0.3s ease;
+}
+
+footer a:hover {
+  color: var(--koala-green) !important;
+  text-decoration: underline;
 }
