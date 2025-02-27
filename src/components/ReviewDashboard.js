@@ -48,7 +48,7 @@ const ReviewDashboard = () => {
   useEffect(() => {
     const loadReviews = async () => {
       try {
-        const fileContent = await window.fs.readFile('20250225_google_reviews_export copy.csv', { encoding: 'utf8' });
+        const fileContent = await window.fs.readFile('reviews.csv', { encoding: 'utf8' });
         
         Papa.parse(fileContent, {
           header: true,
