@@ -1,44 +1,26 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, ResponsiveContainer
+  Tooltip, PieChart, Pie, Cell, ResponsiveContainer
 } from 'recharts';
 import { Search, Star, Filter, ArrowUpDown, Calendar, HelpCircle } from 'lucide-react';
 import Papa from 'papaparse';
-import reviewsData from '../data/reviews.csv';
 
-// Move wordCategories outside the component so it doesn't get recreated on each render
-const WORD_CATEGORIES = {
-  Quality: ['professional', 'excellent', 'quality', 'great', 'thorough'],
-  Service: ['helpful', 'courteous', 'responsive', 'service', 'friendly'],
-  Technical: ['attic', 'foam', 'efficient'],
-  Performance: ['temperature', 'comfort', 'energy', 'cooling', 'heating', 'comfortable'],
+// Koala brand colors from the brand guide
+const KOALA_COLORS = {
+  green: '#95C93D',      // Primary green
+  teal: '#7EB4A3',       // Teal accent
+  blue: '#73AADC',       // Light blue
+  darkBlue: '#043968',   // Dark blue
+  lightGreen: '#e9f5d3', // Light green for backgrounds
+  lightTeal: '#e3f0eb',  // Light teal for backgrounds
+  lightBlue: '#e2eef8'   // Light blue for backgrounds
 };
-
-// Words to focus on that convey praise and compliments
-const PRAISE_WORDS = [
-  'professional', 'excellent', 'great', 'quality', 'thorough', 
-  'knowledgeable', 'courteous', 'responsive', 'fantastic', 'helpful',
-  'amazing', 'impressed', 'recommend', 'efficient', 'friendly',
-  'outstanding', 'perfect', 'awesome', 'wonderful', 'exceptional',
-  // Adding performance-related words
-  'temperature', 'comfort', 'energy', 'cooling', 'heating', 'comfortable'
-];
-
-// Words to exclude from word frequency chart
-const EXCLUDED_WORDS = [
-  'insulation', 'koala', 'work', 'team', 'installation', 'them', 'after', 
-  'done', 'time', 'aldrick', 'mike', 'home', 'they', 'their', 'there', 
-  'were', 'with', 'from', 'have', 'very', 'would', 'about', 'also',
-  'that', 'this', 'what', 'just', 'your', 'will', 'some', 'when', 'into',
-  'only', 'then', 'than', 'should', 'could', 'house', 'attic', 'foam'
-];
 
 const ReviewDashboard = () => {
   const [reviews, setReviews] = useState([]);
   const [filteredReviews, setFilteredReviews] = useState([]);
   const [wordFrequencies, setWordFrequencies] = useState([]);
-  const [originalWordFrequencies, setOriginalWordFrequencies] = useState([]);
   const [wordCategory, setWordCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState('Date');
@@ -56,10 +38,71 @@ const ReviewDashboard = () => {
     oneStarCount: 0,
   });
 
-  const calculateStats = useCallback((reviewData) => {
+  const wordCategories = {
+    Quality: ['professional', 'excellent', 'quality', 'great', 'thorough'],
+    Service: ['helpful', 'courteous', 'responsive', 'service', 'friendly'],
+    Technical: ['insulation', 'attic', 'foam', 'efficient', 'installation'],
+    Performance: ['temperature', 'comfort', 'energy', 'cooling', 'heating'],
+  };
+
+  useEffect(() => {
+    const loadReviews = async () => {
+      try {
+        const fileContent = await window.fs.readFile('20250225_google_reviews_export copy.csv', { encoding: 'utf8' });
+        
+        Papa.parse(fileContent, {
+          header: true,
+          skipEmptyLines: true,
+          complete: (results) => {
+            const parsedReviews = results.data.map(review => {
+              // Convert rating text to number
+              let ratingNum = 5;
+              if (review.Rating === 'ONE') ratingNum = 1;
+              if (review.Rating === 'TWO') ratingNum = 2;
+              if (review.Rating === 'THREE') ratingNum = 3;
+              if (review.Rating === 'FOUR') ratingNum = 4;
+              if (review.Rating === 'FIVE') ratingNum = 5;
+              
+              // Parse date
+              const date = new Date(review.Date);
+              const formattedDate = date.toISOString().split('T')[0];
+              
+              return {
+                ...review,
+                ratingNum,
+                date: formattedDate,
+              };
+            });
+            
+            // Sort by date (most recent first)
+            const sortedReviews = parsedReviews.sort((a, b) => new Date(b.date) - new Date(a.date));
+            
+            setReviews(sortedReviews);
+            setFilteredReviews(sortedReviews);
+            calculateStats(sortedReviews);
+            calculateWordFrequencies(sortedReviews);
+            setLoading(false);
+          },
+          error: (error) => {
+            console.error('Error parsing CSV:', error);
+            setLoading(false);
+          }
+        });
+      } catch (error) {
+        console.error('Error reading file:', error);
+        setLoading(false);
+      }
+    };
+
+    loadReviews();
+  }, []);
+
+  useEffect(() => {
+    filterReviews();
+  }, [searchTerm, sortField, sortDirection, dateRange, ratingFilter, wordCategory, reviews]);
+
+  const calculateStats = (reviewData) => {
     const total = reviewData.length;
-    if (total === 0) return;
-    
     const fiveStar = reviewData.filter(r => r.ratingNum === 5).length;
     const fourStar = reviewData.filter(r => r.ratingNum === 4).length;
     const threeStar = reviewData.filter(r => r.ratingNum === 3).length;
@@ -77,118 +120,33 @@ const ReviewDashboard = () => {
       twoStarCount: twoStar,
       oneStarCount: oneStar,
     });
-  }, []);
+  };
 
-  const calculateWordFrequencies = useCallback((reviewData) => {
-    const text = reviewData.map(r => r["Review Text"] || "").join(' ').toLowerCase();
+  const calculateWordFrequencies = (reviewData) => {
+    const text = reviewData.map(r => r["Review Text"]).join(' ').toLowerCase();
     const words = text.split(/\s+/).filter(w => w.length > 3);
     
-    const wordCount = {};
+    const stopWords = ['this', 'that', 'they', 'their', 'there', 'were', 'with', 'from', 'have', 'very', 'would', 'about', 'also'];
     
-    // First pass - count all words
+    const wordCount = {};
     words.forEach(word => {
       // Remove punctuation and only count words with letters
       const cleanWord = word.replace(/[^\w\s]/gi, '');
-      if (cleanWord && 
-          cleanWord.length > 3 && 
-          !EXCLUDED_WORDS.includes(cleanWord) && 
-          /[a-zA-Z]/.test(cleanWord)) {
+      if (cleanWord && cleanWord.length > 3 && !stopWords.includes(cleanWord) && /[a-zA-Z]/.test(cleanWord)) {
         wordCount[cleanWord] = (wordCount[cleanWord] || 0) + 1;
       }
     });
     
-    // Second pass - filter to only include praise words
-    const praiseWordCounts = {};
-    Object.keys(wordCount).forEach(word => {
-      if (PRAISE_WORDS.includes(word)) {
-        praiseWordCounts[word] = wordCount[word];
-      }
-    });
-    
     // Convert to array and sort
-    const wordFreqArray = Object.entries(praiseWordCounts)
+    const wordFreqArray = Object.entries(wordCount)
       .map(([word, count]) => ({ word, count }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, 10); // Limit to top 10
+      .slice(0, 20);
     
     setWordFrequencies(wordFreqArray);
-    setOriginalWordFrequencies(wordFreqArray); // Save the original for filtering
-  }, []);
+  };
 
-  useEffect(() => {
-    const loadReviews = async () => {
-      try {
-        // Load CSV data
-        fetch(reviewsData)
-          .then(response => response.text())
-          .then(csvText => {
-            Papa.parse(csvText, {
-              header: true,
-              skipEmptyLines: true,
-              complete: (results) => {
-                const parsedReviews = results.data.map(review => {
-                  // Convert rating text to number
-                  let ratingNum = 5;
-                  if (review.Rating === 'ONE') ratingNum = 1;
-                  if (review.Rating === 'TWO') ratingNum = 2;
-                  if (review.Rating === 'THREE') ratingNum = 3;
-                  if (review.Rating === 'FOUR') ratingNum = 4;
-                  if (review.Rating === 'FIVE') ratingNum = 5;
-                  
-                  // Parse date
-                  const date = new Date(review.Date);
-                  const formattedDate = date.toISOString().split('T')[0];
-                  
-                  return {
-                    ...review,
-                    ratingNum,
-                    date: formattedDate,
-                  };
-                });
-                
-                // Sort by date (most recent first)
-                const sortedReviews = parsedReviews.sort((a, b) => new Date(b.date) - new Date(a.date));
-                
-                setReviews(sortedReviews);
-                setFilteredReviews(sortedReviews);
-                calculateStats(sortedReviews);
-                calculateWordFrequencies(sortedReviews);
-                setLoading(false);
-              },
-              error: (error) => {
-                console.error('Error parsing CSV:', error);
-                setLoading(false);
-              }
-            });
-          })
-          .catch(error => {
-            console.error('Error fetching CSV file:', error);
-            setLoading(false);
-          });
-      } catch (error) {
-        console.error('Error loading reviews:', error);
-        setLoading(false);
-      }
-    };
-
-    loadReviews();
-  }, [calculateStats, calculateWordFrequencies]);
-
-  const handleCategoryChange = useCallback((category) => {
-    setWordCategory(category);
-    
-    if (category === 'All') {
-      setWordFrequencies(originalWordFrequencies);
-    } else {
-      const categoryWords = WORD_CATEGORIES[category];
-      const filteredFrequencies = originalWordFrequencies.filter(item => 
-        categoryWords.includes(item.word)
-      );
-      setWordFrequencies(filteredFrequencies);
-    }
-  }, [originalWordFrequencies]);
-
-  const filterReviews = useCallback(() => {
+  const filterReviews = () => {
     let filtered = [...reviews];
     
     // Apply search term filter
@@ -216,7 +174,7 @@ const ReviewDashboard = () => {
     
     // Apply word category filter
     if (wordCategory !== 'All') {
-      const categoryWords = WORD_CATEGORIES[wordCategory];
+      const categoryWords = wordCategories[wordCategory];
       filtered = filtered.filter(review => {
         if (!review["Review Text"]) return false;
         const reviewText = review["Review Text"].toLowerCase();
@@ -248,11 +206,19 @@ const ReviewDashboard = () => {
     
     // Recalculate stats for filtered reviews
     calculateStats(filtered);
-  }, [reviews, searchTerm, sortField, sortDirection, dateRange, ratingFilter, wordCategory, calculateStats]);
-
-  useEffect(() => {
-    filterReviews();
-  }, [filterReviews]);
+    
+    // If word category changed, don't recalculate word frequencies
+    if (wordCategory === 'All') {
+      calculateWordFrequencies(filtered);
+    } else {
+      // Filter word frequencies by category
+      const categoryWords = wordCategories[wordCategory];
+      const filteredFrequencies = wordFrequencies.filter(item => 
+        categoryWords.includes(item.word)
+      );
+      setWordFrequencies(filteredFrequencies);
+    }
+  };
 
   const handleSort = (field) => {
     setSortDirection(sortField === field && sortDirection === 'desc' ? 'asc' : 'desc');
@@ -298,259 +264,65 @@ const ReviewDashboard = () => {
 
   const getWordCategoryClass = (category) => {
     return wordCategory === category
-      ? 'bg-blue-600 text-white font-medium py-1 px-3 rounded-full mr-2'
-      : 'bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-1 px-3 rounded-full mr-2';
+      ? { backgroundColor: KOALA_COLORS.green, color: 'white', fontWeight: '500', padding: '0.25rem 0.75rem', borderRadius: '9999px', marginRight: '0.5rem' }
+      : { backgroundColor: '#e5e7eb', color: '#1f2937', fontWeight: '500', padding: '0.25rem 0.75rem', borderRadius: '9999px', marginRight: '0.5rem' };
   };
+
+  const getPieChartData = () => [
+    { name: '5 Stars', value: stats.fiveStarCount },
+    { name: '4 Stars', value: stats.fourStarCount },
+    { name: '3 Stars', value: stats.threeStarCount },
+    { name: '2 Stars', value: stats.twoStarCount },
+    { name: '1 Star', value: stats.oneStarCount },
+  ];
+
+  // Using Koala colors for the pie chart
+  const pieColors = [
+    KOALA_COLORS.green, 
+    KOALA_COLORS.teal, 
+    KOALA_COLORS.blue, 
+    KOALA_COLORS.lightTeal, 
+    KOALA_COLORS.lightBlue
+  ];
 
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
-          <p className="mt-4 text-xl">Loading review data...</p>
+          <div 
+            className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 mx-auto" 
+            style={{ borderColor: KOALA_COLORS.green }}
+          ></div>
+          <p className="mt-4 text-xl" style={{ color: KOALA_COLORS.darkBlue }}>Loading review data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 bg-gray-50 min-h-screen">
-      <header className="bg-white rounded-lg shadow p-4 mb-6">
-        <h1 className="text-2xl font-bold text-gray-800">Koala Insulation Reviews Analysis</h1>
-        <p className="text-gray-600">Analyze customer feedback and sentiment trends</p>
-      </header>
-      
-      {/* Filters Row */}
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="flex items-center">
-            <Filter className="text-gray-400 mr-2" size={18} />
-            <span className="text-gray-700 font-medium mr-3">Filters:</span>
-            <div className="flex flex-wrap gap-2">
-              <button 
-                className={getWordCategoryClass('All')}
-                onClick={() => handleCategoryChange('All')}
-              >
-                All
-              </button>
-              <button 
-                className={getWordCategoryClass('Quality')}
-                onClick={() => handleCategoryChange('Quality')}
-              >
-                Quality
-              </button>
-              <button 
-                className={getWordCategoryClass('Service')}
-                onClick={() => handleCategoryChange('Service')}
-              >
-                Service
-              </button>
-              <button 
-                className={getWordCategoryClass('Technical')}
-                onClick={() => handleCategoryChange('Technical')}
-              >
-                Technical
-              </button>
-              <button 
-                className={getWordCategoryClass('Performance')}
-                onClick={() => handleCategoryChange('Performance')}
-              >
-                Performance
-              </button>
-            </div>
-          </div>
-          
-          <div className="flex items-center space-x-4">
-            <div className="relative">
-              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-              <select
-                className="pl-10 pr-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                onChange={handleDateRangeChange}
-                defaultValue="all"
-              >
-                {getDateRangeOptions().map(option => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            
-            <div className="relative">
-              <Star className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-              <select
-                className="pl-10 pr-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                value={ratingFilter}
-                onChange={(e) => setRatingFilter(e.target.value)}
-              >
-                <option value="All">All Ratings</option>
-                <option value="5">5 Stars</option>
-                <option value="4">4 Stars</option>
-                <option value="3">3 Stars</option>
-                <option value="2">2 Stars</option>
-                <option value="1">1 Star</option>
-              </select>
-            </div>
-            
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
-              <input
-                type="text"
-                placeholder="Search reviews..."
-                className="pl-10 pr-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 w-64"
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-              />
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <div className="bg-blue-100 p-3 rounded-full">
-              <Star className="text-blue-600" size={24} />
-            </div>
-            <div className="ml-4">
-              <p className="text-gray-500 text-sm">Average Rating</p>
-              <p className="text-2xl font-bold text-gray-800">{stats.averageRating}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <div className="bg-green-100 p-3 rounded-full">
-              <HelpCircle className="text-green-600" size={24} />
-            </div>
-            <div className="ml-4">
-              <p className="text-gray-500 text-sm">Total Reviews</p>
-              <p className="text-2xl font-bold text-gray-800">{stats.totalReviews}</p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <div className="bg-yellow-100 p-3 rounded-full">
-              <Star className="text-yellow-600" size={24} />
-            </div>
-            <div className="ml-4">
-              <p className="text-gray-500 text-sm">5-Star Reviews</p>
-              <p className="text-2xl font-bold text-gray-800">
-                {stats.fiveStarCount} 
-                <span className="text-sm font-normal text-gray-500 ml-1">
-                  ({stats.totalReviews ? Math.round((stats.fiveStarCount / stats.totalReviews) * 100) : 0}%)
-                </span>
-              </p>
-            </div>
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg shadow p-4">
-          <div className="flex items-center">
-            <div className="bg-red-100 p-3 rounded-full">
-              <Star className="text-red-600" size={24} />
-            </div>
-            <div className="ml-4">
-              <p className="text-gray-500 text-sm">Critical Reviews</p>
-              <p className="text-2xl font-bold text-gray-800">
-                {stats.oneStarCount + stats.twoStarCount}
-                <span className="text-sm font-normal text-gray-500 ml-1">
-                  ({stats.totalReviews ? Math.round(((stats.oneStarCount + stats.twoStarCount) / stats.totalReviews) * 100) : 0}%)
-                </span>
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      {/* Word Frequency Chart */}
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
-        <h2 className="text-xl font-semibold mb-4">Word Frequency Analysis</h2>
-        <div className="h-80">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart
-              data={wordFrequencies}
-              layout="vertical"
-              margin={{ top: 5, right: 30, left: 70, bottom: 5 }}
+    <div className="p-4 bg-gray-50 min-h-screen" style={{ background: `linear-gradient(to bottom right, ${KOALA_COLORS.lightGreen}30, ${KOALA_COLORS.lightBlue}30)` }}>
+      <header 
+        className="rounded-lg shadow p-4 mb-6 relative overflow-hidden"
+        style={{ 
+          background: `linear-gradient(to right, ${KOALA_COLORS.lightGreen}, ${KOALA_COLORS.lightBlue})`,
+          borderBottom: `3px solid ${KOALA_COLORS.green}`
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 
+              className="text-2xl font-bold"
+              style={{ color: KOALA_COLORS.darkBlue }}
             >
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis type="number" />
-              <YAxis 
-                type="category" 
-                dataKey="word" 
-                width={80}
-                tick={{ fontSize: 12 }}
-              />
-              <Tooltip formatter={(value) => [`${value} mentions`, 'Frequency']} />
-              <Bar dataKey="count" fill="#4299e1" />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-      
-      {/* Reviews Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        <div className="p-4 border-b">
-          <h2 className="text-xl font-semibold">All Reviews</h2>
-          <p className="text-gray-600">Showing {filteredReviews.length} of {reviews.length} reviews</p>
-        </div>
-        
-        {/* Table Header */}
-        <div className="flex bg-gray-100 p-4 font-medium text-gray-700">
-          <div className="w-36" onClick={() => handleSort('Date')}>
-            <button className="flex items-center">
-              Date
-              <ArrowUpDown size={14} className="ml-1" />
-            </button>
+              Koala Insulation Reviews Analysis
+            </h1>
+            <p className="text-gray-600">Analyze customer feedback and sentiment trends</p>
           </div>
-          <div className="w-32" onClick={() => handleSort('Rating')}>
-            <button className="flex items-center">
-              Rating
-              <ArrowUpDown size={14} className="ml-1" />
-            </button>
+          <div className="w-48">
+            {/* Koala Logo SVG */}
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120">
+              <path d="M96.78 18.53c3.58-.55 5.31-2.66 7.53-5.39 2.4-2.94 5.6-6.88 11.57-6.88 4.83 0 8.2 2.86 9.75 5.39 1.5 2.45 1.43 4.79.91 6.69-.63 2.3-2.27 4.5-4.76 6.44-4.07 3.16-9.6 5.02-14.63 5.02-2.6 0-4.97-.5-6.86-1.5-1.88-1-3.27-2.49-3.87-4.42-.3-.96-.35-1.97-.14-2.98.2-1.01.65-2.02 1.33-2.93l-.83.56z" style={{ fill: KOALA_COLORS.green }}></path>
+            </svg>
           </div>
-          <div className="w-48" onClick={() => handleSort('Reviewer')}>
-            <button className="flex items-center">
-              Reviewer
-              <ArrowUpDown size={14} className="ml-1" />
-            </button>
-          </div>
-          <div className="flex-1">Review</div>
         </div>
-        
-        {/* Table Body */}
-        <div className="overflow-y-auto max-h-96">
-          {filteredReviews.length === 0 ? (
-            <div className="p-8 text-center text-gray-500">
-              No reviews match your filters
-            </div>
-          ) : (
-            filteredReviews.map((review, index) => (
-              <div 
-                key={index}
-                className="flex p-4 border-b border-gray-100 hover:bg-gray-50"
-              >
-                <div className="w-36 text-gray-600">{review.date}</div>
-                <div className="w-32">
-                  {renderStarRating(review.ratingNum)}
-                </div>
-                <div className="w-48 font-medium text-gray-800">
-                  {review.Reviewer || 'Anonymous'}
-                </div>
-                <div className="flex-1 text-gray-700">
-                  {review["Review Text"] || <span className="italic text-gray-400">No review text provided</span>}
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default ReviewDashboard;
+      </header>4.66-5.59-7.11-13.08-6.94-22.8.16-9.57 3.1-20.33 9.08-31.41 6.04-11.27 15.22-21.82 26.2-30.58 10.98-8.77 23.76-15.74 37.41-20.06 13.73-4.34 28.34-6.03 43.04-4.23 14.74 1.8 25.92 7.16 33.96 15.44 4.02 4.14 7.21 9.08 9.75 14.61 2.53 5.53 4.42 11.65 5.87 18.17 2.97 13.42 2.72 28.4-.76 42.42-3.49 14.01-10.22 27.05-22.28 36.03-5.97 4.49-13.15 7.69-21.29 9.44-8.15 1.75-17.26 2.05-27.09 1.13-9.78-.92-18.22-2.96-25.31-6.34-7.09-3.38-12.83-8.09-17.2-14.23-4.36-6.14-7.35-13.71-8.91-22.79-1.55-9.09-1.65-19.72.16-31.9 1.65-11.14 4.91-20.13 9.71-27.38 4.8-7.25 11.14-12.76 18.99-16.93 7.86-4.17 17.23-6.99 28.08-8.94 5.53-1 10.45-1.49 14.79-1.5 4.35-.01 8.11.44 11.31 1.29 5.76 1.51 10.08 4.28 13.25 7.88 3.16 3.6 5.19 8.03 6.35 12.99 1.14 4.96 1.42 10.46.99 16.11-.83 11-4.27 19.39-8.87 25.03-2.3 2.83-4.95 4.89-7.8 6.14-2.84 1.25-5.9 1.68-8.92 1.28-4.38-.57-7.38-2.29-9.56-4.73-2.18-2.44-3.55-5.58-4.2-9.13-.66-3.55-.62-7.5-.01-11.68.62-4.22 1.8-8 3.49-11.32 1.69-3.33 3.89-6.2 6.54-8.34 2.65-2.13 5.77-3.53 9.27-3.87 2.48-.24 4.09.29 5.33 1.32 1.24 1.03 2.1 2.55 2.74 4.3.64 1.75 1.04 3.72 1.32 5.74.28 2.02.46 4.07.64 5.96.37 3.9.64 7.67.73 11.09.09 3.41-.01 6.47-.32 9.06-.62 5.17-1.85 9.18-3.47 12.05-1.63 2.87-3.66 4.6-5.91 5.45-1.99.74-3.87.76-5.68.22-1.81-.54-3.54-1.64-5.22-3.15-1.56-1.41-2.83-3.04-3.87-4.8-1.04-1.75-1.85-3.62-2.46-5.52-.62-1.91-1.04-3.84-1.31-5.75-.26-1.9-.37-3.77-.34-5.56.05-2.78.54-5.5 1.4-8.04.85-2.54 2.08-4.9 3.63-7.03 1.54-2.12 3.41-4.01 5.53-5.53 2.13-1.52 4.52-2.68 7.12-3.29 2.68-.63 5.38-.5 8.05.06 2.67.55 5.3 1.53 7.85 2.8 5.11 2.53 9.6 6.15 13.49 10.46 3.89 4.32 7.17 9.32 9.75 14.71 5.16 10.78 7.84 23.03 8.2 34.8.36 11.78-1.61 23.09-5.65 32.67-4.02 9.55-10.1 17.35-18.13 22.9-7.86 5.44-17.68 8.6-29.27 9.11-5.86.26-11.08-.24-15.72-1.37-4.64-1.13-8.7-2.89-12.18-5.3-6.96-4.83-11.48-12.12-14.06-20.21-2.57-8.09-3.19-16.98-2.29-25.22
