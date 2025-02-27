@@ -326,3 +326,296 @@ const ReviewDashboard = () => {
           </div>
         </div>
       </header>
+
+      {/* Filters Row */}
+      <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex items-center">
+            <Filter style={{ color: KOALA_COLORS.teal }} className="mr-2" size={18} />
+            <span style={{ color: KOALA_COLORS.darkBlue }} className="font-medium mr-3">Filters:</span>
+            <div className="flex flex-wrap gap-2">
+              <button 
+                style={getWordCategoryClass('All')}
+                onClick={() => setWordCategory('All')}
+              >
+                All
+              </button>
+              <button 
+                style={getWordCategoryClass('Quality')}
+                onClick={() => setWordCategory('Quality')}
+              >
+                Quality
+              </button>
+              <button 
+                style={getWordCategoryClass('Service')}
+                onClick={() => setWordCategory('Service')}
+              >
+                Service
+              </button>
+              <button 
+                style={getWordCategoryClass('Technical')}
+                onClick={() => setWordCategory('Technical')}
+              >
+                Technical
+              </button>
+              <button 
+                style={getWordCategoryClass('Performance')}
+                onClick={() => setWordCategory('Performance')}
+              >
+                Performance
+              </button>
+            </div>
+          </div>
+          
+          <div className="flex items-center space-x-4">
+            <div className="relative">
+              <Calendar style={{ color: KOALA_COLORS.teal }} className="absolute left-3 top-1/2 transform -translate-y-1/2" size={16} />
+              <select
+                className="pl-10 pr-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                style={{ borderColor: KOALA_COLORS.teal + '50' }}
+                onChange={handleDateRangeChange}
+                defaultValue="all"
+              >
+                {getDateRangeOptions().map(option => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            
+            <div className="relative">
+              <Star style={{ color: KOALA_COLORS.teal }} className="absolute left-3 top-1/2 transform -translate-y-1/2" size={16} />
+              <select
+                className="pl-10 pr-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                style={{ borderColor: KOALA_COLORS.teal + '50' }}
+                value={ratingFilter}
+                onChange={(e) => setRatingFilter(e.target.value)}
+              >
+                <option value="All">All Ratings</option>
+                <option value="5">5 Stars</option>
+                <option value="4">4 Stars</option>
+                <option value="3">3 Stars</option>
+                <option value="2">2 Stars</option>
+                <option value="1">1 Star</option>
+              </select>
+            </div>
+            
+            <div className="relative">
+              <Search style={{ color: KOALA_COLORS.teal }} className="absolute left-3 top-1/2 transform -translate-y-1/2" size={16} />
+              <input
+                type="text"
+                placeholder="Search reviews..."
+                className="pl-10 pr-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 w-64"
+                style={{ borderColor: KOALA_COLORS.teal + '50' }}
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <div className="bg-white rounded-lg shadow p-4" style={{ borderTop: `3px solid ${KOALA_COLORS.blue}` }}>
+          <div className="flex items-center">
+            <div className="p-3 rounded-full" style={{ backgroundColor: `${KOALA_COLORS.blue}20` }}>
+              <Star style={{ color: KOALA_COLORS.blue }} size={24} />
+            </div>
+            <div className="ml-4">
+              <p className="text-gray-500 text-sm">Average Rating</p>
+              <p className="text-2xl font-bold" style={{ color: KOALA_COLORS.darkBlue }}>{stats.averageRating}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow p-4" style={{ borderTop: `3px solid ${KOALA_COLORS.green}` }}>
+          <div className="flex items-center">
+            <div className="p-3 rounded-full" style={{ backgroundColor: `${KOALA_COLORS.green}20` }}>
+              <HelpCircle style={{ color: KOALA_COLORS.green }} size={24} />
+            </div>
+            <div className="ml-4">
+              <p className="text-gray-500 text-sm">Total Reviews</p>
+              <p className="text-2xl font-bold" style={{ color: KOALA_COLORS.darkBlue }}>{stats.totalReviews}</p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow p-4" style={{ borderTop: `3px solid ${KOALA_COLORS.teal}` }}>
+          <div className="flex items-center">
+            <div className="p-3 rounded-full" style={{ backgroundColor: `${KOALA_COLORS.teal}20` }}>
+              <Star style={{ color: KOALA_COLORS.teal }} size={24} />
+            </div>
+            <div className="ml-4">
+              <p className="text-gray-500 text-sm">5-Star Reviews</p>
+              <p className="text-2xl font-bold" style={{ color: KOALA_COLORS.darkBlue }}>
+                {stats.fiveStarCount} 
+                <span className="text-sm font-normal text-gray-500 ml-1">
+                  ({stats.totalReviews ? Math.round((stats.fiveStarCount / stats.totalReviews) * 100) : 0}%)
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+        
+        <div className="bg-white rounded-lg shadow p-4" style={{ borderTop: `3px solid ${KOALA_COLORS.darkBlue}` }}>
+          <div className="flex items-center">
+            <div className="p-3 rounded-full" style={{ backgroundColor: `${KOALA_COLORS.darkBlue}15` }}>
+              <Star style={{ color: KOALA_COLORS.darkBlue }} size={24} />
+            </div>
+            <div className="ml-4">
+              <p className="text-gray-500 text-sm">Critical Reviews</p>
+              <p className="text-2xl font-bold" style={{ color: KOALA_COLORS.darkBlue }}>
+                {stats.oneStarCount + stats.twoStarCount}
+                <span className="text-sm font-normal text-gray-500 ml-1">
+                  ({stats.totalReviews ? Math.round(((stats.oneStarCount + stats.twoStarCount) / stats.totalReviews) * 100) : 0}%)
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* Charts Row */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+        {/* Word Frequency */}
+        <div className="bg-white rounded-lg shadow p-4 lg:col-span-2" style={{ borderLeft: `4px solid ${KOALA_COLORS.green}` }}>
+          <h2 className="text-xl font-semibold mb-4" style={{ color: KOALA_COLORS.darkBlue }}>Word Frequency Analysis</h2>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart
+                data={wordFrequencies}
+                layout="vertical"
+                margin={{ top: 5, right: 30, left: 70, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#eaeaea" />
+                <XAxis type="number" tick={{ fill: '#6B7280' }} />
+                <YAxis 
+                  type="category" 
+                  dataKey="word" 
+                  width={80}
+                  tick={{ fontSize: 12, fill: '#6B7280' }}
+                />
+                <Tooltip 
+                  formatter={(value) => [`${value} mentions`, 'Frequency']} 
+                  contentStyle={{ borderColor: KOALA_COLORS.teal, backgroundColor: 'white' }}
+                />
+                <Bar dataKey="count" fill={KOALA_COLORS.green} />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+        
+        {/* Rating Distribution */}
+        <div className="bg-white rounded-lg shadow p-4" style={{ borderLeft: `4px solid ${KOALA_COLORS.blue}` }}>
+          <h2 className="text-xl font-semibold mb-4" style={{ color: KOALA_COLORS.darkBlue }}>Rating Distribution</h2>
+          <div className="h-80">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={getPieChartData()}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  outerRadius={80}
+                  dataKey="value"
+                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                >
+                  {getPieChartData().map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  formatter={(value) => [`${value} reviews`, '']} 
+                  contentStyle={{ borderColor: KOALA_COLORS.teal, backgroundColor: 'white' }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
+      
+      {/* Reviews Table */}
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="p-4 border-b" style={{ borderColor: KOALA_COLORS.lightGreen, backgroundColor: KOALA_COLORS.lightGreen + '30' }}>
+          <h2 className="text-xl font-bold" style={{ color: KOALA_COLORS.darkBlue }}>All Reviews</h2>
+          <p className="text-gray-600">Showing {filteredReviews.length} of {reviews.length} reviews</p>
+        </div>
+        
+        {/* Table Header */}
+        <div className="flex bg-gray-100 p-4 font-medium" style={{ color: KOALA_COLORS.darkBlue, backgroundColor: KOALA_COLORS.lightBlue + '30' }}>
+          <div className="w-36" onClick={() => handleSort('Date')}>
+            <button className="flex items-center">
+              Date
+              <ArrowUpDown size={14} className="ml-1" style={{ color: KOALA_COLORS.blue }} />
+            </button>
+          </div>
+          <div className="w-32" onClick={() => handleSort('Rating')}>
+            <button className="flex items-center">
+              Rating
+              <ArrowUpDown size={14} className="ml-1" style={{ color: KOALA_COLORS.blue }} />
+            </button>
+          </div>
+          <div className="w-48" onClick={() => handleSort('Reviewer')}>
+            <button className="flex items-center">
+              Reviewer
+              <ArrowUpDown size={14} className="ml-1" style={{ color: KOALA_COLORS.blue }} />
+            </button>
+          </div>
+          <div className="flex-1">Review</div>
+        </div>
+        
+        {/* Table Body */}
+        <div className="overflow-y-auto max-h-96">
+          {filteredReviews.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+              No reviews match your filters
+            </div>
+          ) : (
+            filteredReviews.map((review, index) => (
+              <div 
+                key={index}
+                className="flex p-4 border-b border-gray-100 hover:bg-gray-50 review-row"
+                style={{ 
+                  borderColor: '#f3f4f6',
+                  backgroundColor: index % 2 === 0 ? '#ffffff' : KOALA_COLORS.lightGreen + '10' 
+                }}
+              >
+                <div className="w-36 text-gray-600">{review.date}</div>
+                <div className="w-32 star-rating">
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <span 
+                      key={i} 
+                      className={`text-2xl ${i < review.ratingNum ? '' : 'text-gray-300'}`}
+                      style={i < review.ratingNum ? { color: KOALA_COLORS.green } : {}}
+                    >
+                      ★
+                    </span>
+                  ))}
+                </div>
+                <div className="w-48 font-medium" style={{ color: KOALA_COLORS.darkBlue }}>
+                  {review.Reviewer || 'Anonymous'}
+                </div>
+                <div className="flex-1 text-gray-700">
+                  {review["Review Text"] || <span className="italic text-gray-400">No review text provided</span>}
+                </div>
+              </div>
+            ))
+          )}
+        </div>
+      </div>
+
+      <footer className="mt-8 p-4 text-center" style={{ color: KOALA_COLORS.darkBlue }}>
+        <p>© {new Date().getFullYear()} Koala Insulation - All Rights Reserved</p>
+        <div className="flex justify-center mt-2">
+          <a href="#" className="mx-2" style={{ color: KOALA_COLORS.blue }}>Privacy Policy</a>
+          <a href="#" className="mx-2" style={{ color: KOALA_COLORS.blue }}>Terms of Service</a>
+          <a href="#" className="mx-2" style={{ color: KOALA_COLORS.blue }}>Contact Us</a>
+        </div>
+      </footer>
+    </div>
+  );
+};
+
+export default ReviewDashboard;
