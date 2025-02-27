@@ -1,4 +1,7 @@
-import React, { useState, useEffect } from 'react';
+// Fix for useEffect dependency issue - Line 118
+// Move the filterReviews function outside of the component or use useCallback
+
+import React, { useState, useEffect, useCallback } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, PieChart, Pie, Cell, ResponsiveContainer
@@ -47,24 +50,19 @@ const ReviewDashboard = () => {
 
   useEffect(() => {
     const loadReviews = async () => {
-  try {
-    let fileContent;
-    
-    // In production, import the CSV directly or fetch it from a public URL
-    if (process.env.NODE_ENV === 'production') {
-      // Option 1: If you can import the CSV file directly
-      // Add the CSV file to your public folder and fetch it
-      fileContent = await fetch('/data/reviews.csv')
-        .then(response => response.text());
-      
-      // Option 2: Or use a static placeholder for deployment
-      // Define a fallback dataset for production builds
-      // const sampleData = `Date,Rating,Reviewer,Review Text\n2025-02-25,FIVE,John Doe,Great service!`;
-      // fileContent = sampleData;
-    } else {
-      // In development, use the window.fs method if available
-      fileContent = await window.fs.readFile('reviews.csv', { encoding: 'utf8' });
-    }
+      try {
+        let fileContent;
+        
+        // In production, import the CSV directly or fetch it from a public URL
+        if (process.env.NODE_ENV === 'production') {
+          // Option 1: If you can import the CSV file directly
+          // Add the CSV file to your public folder and fetch it
+          fileContent = await fetch('/data/reviews.csv')
+            .then(response => response.text());
+        } else {
+          // In development, use the window.fs method if available
+          fileContent = await window.fs.readFile('20250225_google_reviews_export copy.csv', { encoding: 'utf8' });
+        }
         
         Papa.parse(fileContent, {
           header: true,
@@ -113,10 +111,6 @@ const ReviewDashboard = () => {
     loadReviews();
   }, []);
 
-  useEffect(() => {
-    filterReviews();
-  }, [searchTerm, sortField, sortDirection, dateRange, ratingFilter, wordCategory, reviews]);
-
   const calculateStats = (reviewData) => {
     const total = reviewData.length;
     const fiveStar = reviewData.filter(r => r.ratingNum === 5).length;
@@ -162,7 +156,8 @@ const ReviewDashboard = () => {
     setWordFrequencies(wordFreqArray);
   };
 
-  const filterReviews = () => {
+  // Use useCallback to memoize the filterReviews function
+  const filterReviews = useCallback(() => {
     let filtered = [...reviews];
     
     // Apply search term filter
@@ -234,7 +229,11 @@ const ReviewDashboard = () => {
       );
       setWordFrequencies(filteredFrequencies);
     }
-  };
+  }, [searchTerm, sortField, sortDirection, dateRange, ratingFilter, wordCategory, reviews, wordFrequencies]);
+
+  useEffect(() => {
+    filterReviews();
+  }, [filterReviews]);
 
   const handleSort = (field) => {
     setSortDirection(sortField === field && sortDirection === 'desc' ? 'asc' : 'desc');
@@ -268,16 +267,8 @@ const ReviewDashboard = () => {
     setDateRange({ start: startStr, end });
   };
 
-  const renderStarRating = (rating) => {
-    const stars = [];
-    for (let i = 1; i <= 5; i++) {
-      stars.push(
-        <span key={i} className={`text-2xl ${i <= rating ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
-      );
-    }
-    return <div className="flex">{stars}</div>;
-  };
-
+  // Remove the unused renderStarRating function
+  
   const getWordCategoryClass = (category) => {
     return wordCategory === category
       ? { backgroundColor: KOALA_COLORS.green, color: 'white', fontWeight: '500', padding: '0.25rem 0.75rem', borderRadius: '9999px', marginRight: '0.5rem' }
@@ -625,9 +616,9 @@ const ReviewDashboard = () => {
       <footer className="mt-8 p-4 text-center" style={{ color: KOALA_COLORS.darkBlue }}>
         <p>© {new Date().getFullYear()} Koala Insulation - All Rights Reserved</p>
         <div className="flex justify-center mt-2">
-          <a href="#" className="mx-2" style={{ color: KOALA_COLORS.blue }}>Privacy Policy</a>
-          <a href="#" className="mx-2" style={{ color: KOALA_COLORS.blue }}>Terms of Service</a>
-          <a href="#" className="mx-2" style={{ color: KOALA_COLORS.blue }}>Contact Us</a>
+          <a href="https://www.koalainsulation.com/privacy-policy" className="mx-2" style={{ color: KOALA_COLORS.blue }}>Privacy Policy</a>
+          <a href="https://www.koalainsulation.com/terms" className="mx-2" style={{ color: KOALA_COLORS.blue }}>Terms of Service</a>
+          <a href="https://www.koalainsulation.com/contact" className="mx-2" style={{ color: KOALA_COLORS.blue }}>Contact Us</a>
         </div>
       </footer>
     </div>
