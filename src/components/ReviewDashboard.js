@@ -1,7 +1,4 @@
-// Fix for useEffect dependency issue - Line 118
-// Move the filterReviews function outside of the component or use useCallback
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, 
   Tooltip, PieChart, Pie, Cell, ResponsiveContainer
@@ -41,12 +38,13 @@ const ReviewDashboard = () => {
     oneStarCount: 0,
   });
 
-  const wordCategories = {
+  // Use useMemo to prevent recreation of wordCategories on every render
+  const wordCategories = useMemo(() => ({
     Quality: ['professional', 'excellent', 'quality', 'great', 'thorough'],
     Service: ['helpful', 'courteous', 'responsive', 'service', 'friendly'],
     Technical: ['insulation', 'attic', 'foam', 'efficient', 'installation'],
     Performance: ['temperature', 'comfort', 'energy', 'cooling', 'heating'],
-  };
+  }), []); // Empty dependency array means this only runs once
 
   useEffect(() => {
     const loadReviews = async () => {
@@ -266,8 +264,6 @@ const ReviewDashboard = () => {
     
     setDateRange({ start: startStr, end });
   };
-
-  // Remove the unused renderStarRating function
   
   const getWordCategoryClass = (category) => {
     return wordCategory === category
