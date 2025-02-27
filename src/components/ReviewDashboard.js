@@ -229,7 +229,7 @@ const ReviewDashboard = () => {
       );
       setWordFrequencies(filteredFrequencies);
     }
-  }, [searchTerm, sortField, sortDirection, dateRange, ratingFilter, wordCategory, reviews, wordFrequencies]);
+  }, [searchTerm, sortField, sortDirection, dateRange, ratingFilter, wordCategory, reviews, wordFrequencies, wordCategories]);
 
   useEffect(() => {
     filterReviews();
