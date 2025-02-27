@@ -2,13 +2,26 @@
 @tailwind components;
 @tailwind utilities;
 
+@import url('https://fonts.googleapis.com/css2?family=Alegreya+Sans:wght@300;400;500;700&display=swap');
+
 body {
   margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
-    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
-    sans-serif;
+  font-family: 'Alegreya Sans', sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Alegreya Sans', sans-serif;
+  font-weight: 700;
+}
+
+.koala-gradient {
+  background: linear-gradient(to right, #95C93D, #7EB4A3, #73AADC);
+}
+
+.koala-shadow {
+  box-shadow: 0 4px 6px -1px rgba(149, 201, 61, 0.1), 0 2px 4px -1px rgba(115, 170, 220, 0.06);
 }
 
 code {
