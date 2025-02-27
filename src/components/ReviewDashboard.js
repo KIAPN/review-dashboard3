@@ -47,8 +47,24 @@ const ReviewDashboard = () => {
 
   useEffect(() => {
     const loadReviews = async () => {
-      try {
-        const fileContent = await window.fs.readFile('reviews.csv', { encoding: 'utf8' });
+  try {
+    let fileContent;
+    
+    // In production, import the CSV directly or fetch it from a public URL
+    if (process.env.NODE_ENV === 'production') {
+      // Option 1: If you can import the CSV file directly
+      // Add the CSV file to your public folder and fetch it
+      fileContent = await fetch('/data/reviews.csv')
+        .then(response => response.text());
+      
+      // Option 2: Or use a static placeholder for deployment
+      // Define a fallback dataset for production builds
+      // const sampleData = `Date,Rating,Reviewer,Review Text\n2025-02-25,FIVE,John Doe,Great service!`;
+      // fileContent = sampleData;
+    } else {
+      // In development, use the window.fs method if available
+      fileContent = await window.fs.readFile('reviews.csv', { encoding: 'utf8' });
+    }
         
         Papa.parse(fileContent, {
           header: true,
