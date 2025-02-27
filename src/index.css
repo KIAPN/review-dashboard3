@@ -1,4 +1,4 @@
-/* Add these styles to your index.css or create a new CSS file and import it */
+/* Add these styles to your index.css */
 
 /* Import fonts that match Koala's brand guidelines */
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;700&display=swap'); /* Similar to Filson */
@@ -18,7 +18,7 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: 0;
 }
 
-/* Koala Brand Colors */
+/* Koala Brand Colors as CSS Variables */
 :root {
   --koala-green: #95C93D;
   --koala-teal: #7EB4A3;
@@ -49,23 +49,23 @@ button:hover {
 }
 
 .overflow-y-auto::-webkit-scrollbar-thumb {
-  background: var(--koala-teal);
+  background: #7EB4A3;
   border-radius: 10px;
 }
 
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: var(--koala-green);
+  background: #95C93D;
 }
 
 /* Table row hover effect */
 .review-row:hover {
-  background-color: var(--koala-light-green) !important;
+  background-color: rgba(233, 245, 211, 0.5) !important;
 }
 
 /* Chart tooltip customization */
 .recharts-tooltip-wrapper .recharts-default-tooltip {
   background-color: white !important;
-  border: 1px solid var(--koala-teal) !important;
+  border: 1px solid #7EB4A3 !important;
   border-radius: 5px !important;
 }
 
@@ -88,14 +88,9 @@ button:hover {
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
 }
 
-/* Filter buttons transition */
-.filter-button {
-  transition: background-color 0.3s ease, color 0.3s ease;
-}
-
 /* Custom focus styles for inputs */
 input:focus, select:focus {
-  border-color: var(--koala-green) !important;
+  border-color: #95C93D !important;
   box-shadow: 0 0 0 3px rgba(149, 201, 61, 0.2) !important;
   outline: none;
 }
@@ -106,6 +101,19 @@ footer a {
 }
 
 footer a:hover {
-  color: var(--koala-green) !important;
+  color: #95C93D !important;
   text-decoration: underline;
+}
+
+/* Make sure to add these classes to your elements */
+.dashboard-card {
+  background-color: white;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.star-rating {
+  display: flex;
+  align-items: center;
 }
