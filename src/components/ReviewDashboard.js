@@ -1,10 +1,13 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { 
-  BarChart, Bar, XAxis, YAxis, CartesianGrid, 
-  Tooltip, PieChart, Pie, Cell, ResponsiveContainer
-} from 'recharts';
 import { Search, Star, Filter, ArrowUpDown, Calendar, HelpCircle } from 'lucide-react';
 import Papa from 'papaparse';
+
+// Import the KoalaLogo component
+import KoalaLogo from './KoalaLogo';
+
+// Import chart components
+import WordFrequencyChart from './charts/WordFrequencyChart';
+import RatingDistributionChart from './charts/RatingDistributionChart';
 
 // Koala brand colors from the brand guide
 const KOALA_COLORS = {
@@ -12,9 +15,9 @@ const KOALA_COLORS = {
   teal: '#7EB4A3',       // Teal accent
   blue: '#73AADC',       // Light blue
   darkBlue: '#043968',   // Dark blue
-  lightGreen: '#e9f5d3', // Light green for backgrounds
-  lightTeal: '#e3f0eb',  // Light teal for backgrounds
-  lightBlue: '#e2eef8'   // Light blue for backgrounds
+  lightGreen: '#e9f5d3',  // Light green for backgrounds
+  lightTeal: '#e3f0eb',   // Light teal for backgrounds
+  lightBlue: '#e2eef8'    // Light blue for backgrounds
 };
 
 const ReviewDashboard = () => {
@@ -267,8 +270,8 @@ const ReviewDashboard = () => {
   
   const getWordCategoryClass = (category) => {
     return wordCategory === category
-      ? { backgroundColor: KOALA_COLORS.green, color: 'white', fontWeight: '500', padding: '0.25rem 0.75rem', borderRadius: '9999px', marginRight: '0.5rem' }
-      : { backgroundColor: '#e5e7eb', color: '#1f2937', fontWeight: '500', padding: '0.25rem 0.75rem', borderRadius: '9999px', marginRight: '0.5rem' };
+      ? 'koala-filter-tag active'
+      : 'koala-filter-tag';
   };
 
   const getPieChartData = () => [
@@ -279,18 +282,9 @@ const ReviewDashboard = () => {
     { name: '1 Star', value: stats.oneStarCount },
   ];
 
-  // Using Koala colors for the pie chart
-  const pieColors = [
-    KOALA_COLORS.green, 
-    KOALA_COLORS.teal, 
-    KOALA_COLORS.blue, 
-    KOALA_COLORS.lightTeal, 
-    KOALA_COLORS.lightBlue
-  ];
-
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center h-screen koala-gradient-background">
         <div className="text-center">
           <div 
             className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 mx-auto" 
@@ -303,14 +297,8 @@ const ReviewDashboard = () => {
   }
 
   return (
-    <div className="p-4 bg-gray-50 min-h-screen" style={{ background: `linear-gradient(to bottom right, ${KOALA_COLORS.lightGreen}30, ${KOALA_COLORS.lightBlue}30)` }}>
-      <header 
-        className="rounded-lg shadow p-4 mb-6 relative overflow-hidden"
-        style={{ 
-          background: `linear-gradient(to right, ${KOALA_COLORS.lightGreen}, ${KOALA_COLORS.lightBlue})`,
-          borderBottom: `3px solid ${KOALA_COLORS.green}`
-        }}
-      >
+    <div className="p-4 min-h-screen koala-gradient-background">
+      <header className="koala-header">
         <div className="flex items-center justify-between">
           <div>
             <h1 
@@ -322,47 +310,44 @@ const ReviewDashboard = () => {
             <p className="text-gray-600">Analyze customer feedback and sentiment trends</p>
           </div>
           <div className="w-48">
-            {/* Koala Logo SVG */}
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 120">
-              <path d="M96.78 18.53c3.58-.55 5.31-2.66 7.53-5.39 2.4-2.94 5.6-6.88 11.57-6.88 4.83 0 8.2 2.86 9.75 5.39 1.5 2.45 1.43 4.79.91 6.69-.63 2.3-2.27 4.5-4.76 6.44-4.07 3.16-9.6 5.02-14.63 5.02-2.6 0-4.97-.5-6.86-1.5-1.88-1-3.27-2.49-3.87-4.42-.3-.96-.35-1.97-.14-2.98.2-1.01.65-2.02 1.33-2.93l-.83.56z" style={{ fill: KOALA_COLORS.green }}></path>
-            </svg>
+            <KoalaLogo width={200} />
           </div>
         </div>
       </header>
 
       {/* Filters Row */}
-      <div className="bg-white rounded-lg shadow p-4 mb-6">
+      <div className="koala-card p-4 mb-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center">
             <Filter style={{ color: KOALA_COLORS.teal }} className="mr-2" size={18} />
             <span style={{ color: KOALA_COLORS.darkBlue }} className="font-medium mr-3">Filters:</span>
             <div className="flex flex-wrap gap-2">
               <button 
-                style={getWordCategoryClass('All')}
+                className={getWordCategoryClass('All')}
                 onClick={() => setWordCategory('All')}
               >
                 All
               </button>
               <button 
-                style={getWordCategoryClass('Quality')}
+                className={getWordCategoryClass('Quality')}
                 onClick={() => setWordCategory('Quality')}
               >
                 Quality
               </button>
               <button 
-                style={getWordCategoryClass('Service')}
+                className={getWordCategoryClass('Service')}
                 onClick={() => setWordCategory('Service')}
               >
                 Service
               </button>
               <button 
-                style={getWordCategoryClass('Technical')}
+                className={getWordCategoryClass('Technical')}
                 onClick={() => setWordCategory('Technical')}
               >
                 Technical
               </button>
               <button 
-                style={getWordCategoryClass('Performance')}
+                className={getWordCategoryClass('Performance')}
                 onClick={() => setWordCategory('Performance')}
               >
                 Performance
@@ -421,7 +406,7 @@ const ReviewDashboard = () => {
       
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="bg-white rounded-lg shadow p-4" style={{ borderTop: `3px solid ${KOALA_COLORS.blue}` }}>
+        <div className="koala-card koala-border-blue p-4 dashboard-card">
           <div className="flex items-center">
             <div className="p-3 rounded-full" style={{ backgroundColor: `${KOALA_COLORS.blue}20` }}>
               <Star style={{ color: KOALA_COLORS.blue }} size={24} />
@@ -433,7 +418,7 @@ const ReviewDashboard = () => {
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow p-4" style={{ borderTop: `3px solid ${KOALA_COLORS.green}` }}>
+        <div className="koala-card koala-border-green p-4 dashboard-card">
           <div className="flex items-center">
             <div className="p-3 rounded-full" style={{ backgroundColor: `${KOALA_COLORS.green}20` }}>
               <HelpCircle style={{ color: KOALA_COLORS.green }} size={24} />
@@ -445,7 +430,7 @@ const ReviewDashboard = () => {
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow p-4" style={{ borderTop: `3px solid ${KOALA_COLORS.teal}` }}>
+        <div className="koala-card koala-border-teal p-4 dashboard-card">
           <div className="flex items-center">
             <div className="p-3 rounded-full" style={{ backgroundColor: `${KOALA_COLORS.teal}20` }}>
               <Star style={{ color: KOALA_COLORS.teal }} size={24} />
@@ -462,7 +447,7 @@ const ReviewDashboard = () => {
           </div>
         </div>
         
-        <div className="bg-white rounded-lg shadow p-4" style={{ borderTop: `3px solid ${KOALA_COLORS.darkBlue}` }}>
+        <div className="koala-card koala-border-dark-blue p-4 dashboard-card">
           <div className="flex items-center">
             <div className="p-3 rounded-full" style={{ backgroundColor: `${KOALA_COLORS.darkBlue}15` }}>
               <Star style={{ color: KOALA_COLORS.darkBlue }} size={24} />
@@ -483,64 +468,20 @@ const ReviewDashboard = () => {
       {/* Charts Row */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
         {/* Word Frequency */}
-        <div className="bg-white rounded-lg shadow p-4 lg:col-span-2" style={{ borderLeft: `4px solid ${KOALA_COLORS.green}` }}>
+        <div className="koala-card p-4 lg:col-span-2" style={{ borderLeft: `4px solid ${KOALA_COLORS.green}` }}>
           <h2 className="text-xl font-semibold mb-4" style={{ color: KOALA_COLORS.darkBlue }}>Word Frequency Analysis</h2>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={wordFrequencies}
-                layout="vertical"
-                margin={{ top: 5, right: 30, left: 70, bottom: 5 }}
-              >
-                <CartesianGrid strokeDasharray="3 3" stroke="#eaeaea" />
-                <XAxis type="number" tick={{ fill: '#6B7280' }} />
-                <YAxis 
-                  type="category" 
-                  dataKey="word" 
-                  width={80}
-                  tick={{ fontSize: 12, fill: '#6B7280' }}
-                />
-                <Tooltip 
-                  formatter={(value) => [`${value} mentions`, 'Frequency']} 
-                  contentStyle={{ borderColor: KOALA_COLORS.teal, backgroundColor: 'white' }}
-                />
-                <Bar dataKey="count" fill={KOALA_COLORS.green} />
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
+          <WordFrequencyChart data={wordFrequencies} />
         </div>
         
         {/* Rating Distribution */}
-        <div className="bg-white rounded-lg shadow p-4" style={{ borderLeft: `4px solid ${KOALA_COLORS.blue}` }}>
+        <div className="koala-card p-4" style={{ borderLeft: `4px solid ${KOALA_COLORS.blue}` }}>
           <h2 className="text-xl font-semibold mb-4" style={{ color: KOALA_COLORS.darkBlue }}>Rating Distribution</h2>
-          <div className="h-80">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={getPieChartData()}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  outerRadius={80}
-                  dataKey="value"
-                  label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                >
-                  {getPieChartData().map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={pieColors[index % pieColors.length]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                  formatter={(value) => [`${value} reviews`, '']} 
-                  contentStyle={{ borderColor: KOALA_COLORS.teal, backgroundColor: 'white' }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          </div>
+          <RatingDistributionChart data={getPieChartData()} />
         </div>
       </div>
       
       {/* Reviews Table */}
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      <div className="koala-card overflow-hidden">
         <div className="p-4 border-b" style={{ borderColor: KOALA_COLORS.lightGreen, backgroundColor: KOALA_COLORS.lightGreen + '30' }}>
           <h2 className="text-xl font-bold" style={{ color: KOALA_COLORS.darkBlue }}>All Reviews</h2>
           <p className="text-gray-600">Showing {filteredReviews.length} of {reviews.length} reviews</p>
@@ -548,19 +489,19 @@ const ReviewDashboard = () => {
         
         {/* Table Header */}
         <div className="flex bg-gray-100 p-4 font-medium" style={{ color: KOALA_COLORS.darkBlue, backgroundColor: KOALA_COLORS.lightBlue + '30' }}>
-          <div className="w-36" onClick={() => handleSort('Date')}>
+          <div className="w-36 cursor-pointer" onClick={() => handleSort('Date')}>
             <button className="flex items-center">
               Date
               <ArrowUpDown size={14} className="ml-1" style={{ color: KOALA_COLORS.blue }} />
             </button>
           </div>
-          <div className="w-32" onClick={() => handleSort('Rating')}>
+          <div className="w-32 cursor-pointer" onClick={() => handleSort('Rating')}>
             <button className="flex items-center">
               Rating
               <ArrowUpDown size={14} className="ml-1" style={{ color: KOALA_COLORS.blue }} />
             </button>
           </div>
-          <div className="w-48" onClick={() => handleSort('Reviewer')}>
+          <div className="w-48 cursor-pointer" onClick={() => handleSort('Reviewer')}>
             <button className="flex items-center">
               Reviewer
               <ArrowUpDown size={14} className="ml-1" style={{ color: KOALA_COLORS.blue }} />
@@ -579,7 +520,7 @@ const ReviewDashboard = () => {
             filteredReviews.map((review, index) => (
               <div 
                 key={index}
-                className="flex p-4 border-b border-gray-100 hover:bg-gray-50 review-row"
+                className="flex p-4 border-b border-gray-100 review-row"
                 style={{ 
                   borderColor: '#f3f4f6',
                   backgroundColor: index % 2 === 0 ? '#ffffff' : KOALA_COLORS.lightGreen + '10' 
@@ -609,12 +550,12 @@ const ReviewDashboard = () => {
         </div>
       </div>
 
-      <footer className="mt-8 p-4 text-center" style={{ color: KOALA_COLORS.darkBlue }}>
+      <footer className="koala-footer">
         <p>© {new Date().getFullYear()} Koala Insulation - All Rights Reserved</p>
         <div className="flex justify-center mt-2">
-          <a href="https://www.koalainsulation.com/privacy-policy" className="mx-2" style={{ color: KOALA_COLORS.blue }}>Privacy Policy</a>
-          <a href="https://www.koalainsulation.com/terms" className="mx-2" style={{ color: KOALA_COLORS.blue }}>Terms of Service</a>
-          <a href="https://www.koalainsulation.com/contact" className="mx-2" style={{ color: KOALA_COLORS.blue }}>Contact Us</a>
+          <a href="https://www.koalainsulation.com/privacy-policy" className="mx-2">Privacy Policy</a>
+          <a href="https://www.koalainsulation.com/terms" className="mx-2">Terms of Service</a>
+          <a href="https://www.koalainsulation.com/contact" className="mx-2">Contact Us</a>
         </div>
       </footer>
     </div>
