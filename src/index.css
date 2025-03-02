@@ -1,4 +1,4 @@
-/* Add these styles to your index.css */
+/* Koala Insulation Brand Styling */
 
 /* Import fonts that match Koala's brand guidelines */
 @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;700&display=swap'); /* Similar to Filson */
@@ -8,7 +8,7 @@
 body {
   margin: 0;
   padding: 0;
-  font-family: 'Montserrat', sans-serif; /* Primary font */
+  font-family: 'Montserrat', sans-serif; /* Primary font similar to Filson */
   color: #333;
   background-color: #f9f9f9;
 }
@@ -18,7 +18,7 @@ h1, h2, h3, h4, h5, h6 {
   margin-top: 0;
 }
 
-/* Koala Brand Colors as CSS Variables */
+/* Koala Brand Colors as CSS Variables - exact values from brand guide */
 :root {
   --koala-green: #95C93D;
   --koala-teal: #7EB4A3;
@@ -29,12 +29,111 @@ h1, h2, h3, h4, h5, h6 {
   --koala-light-blue: #e2eef8;
 }
 
+/* Brand-consistent gradient backgrounds */
+.koala-gradient-primary {
+  background: linear-gradient(to right, var(--koala-green), var(--koala-blue));
+}
+
+.koala-gradient-light {
+  background: linear-gradient(to right, var(--koala-light-green), var(--koala-light-blue));
+}
+
+.koala-gradient-background {
+  background: linear-gradient(to bottom right, var(--koala-light-green)30, var(--koala-light-blue)30);
+}
+
+/* Header styling that matches brand guide */
+.koala-header {
+  background: linear-gradient(to right, var(--koala-light-green), var(--koala-light-blue));
+  border-bottom: 3px solid var(--koala-green);
+  padding: 1.5rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+/* Card styling per brand guidelines */
+.koala-card {
+  background-color: white;
+  border-radius: 0.5rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.koala-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Branded accent borders */
+.koala-border-green {
+  border-top: 3px solid var(--koala-green);
+}
+
+.koala-border-teal {
+  border-top: 3px solid var(--koala-teal);
+}
+
+.koala-border-blue {
+  border-top: 3px solid var(--koala-blue);
+}
+
+.koala-border-dark-blue {
+  border-top: 3px solid var(--koala-dark-blue);
+}
+
 /* Button styles */
-button {
+.koala-button {
+  background-color: var(--koala-green);
+  color: white;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  border: none;
+  cursor: pointer;
   transition: all 0.2s ease;
 }
 
-button:hover {
+.koala-button:hover {
+  background-color: #86b934;
+  transform: translateY(-1px);
+}
+
+.koala-button-secondary {
+  background-color: var(--koala-teal);
+  color: white;
+  font-weight: 500;
+  padding: 0.5rem 1rem;
+  border-radius: 0.25rem;
+  border: none;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.koala-button-secondary:hover {
+  background-color: #6ea393;
+  transform: translateY(-1px);
+}
+
+/* Filter tags that match the brand style */
+.koala-filter-tag {
+  background-color: #e5e7eb;
+  color: #1f2937;
+  font-weight: 500;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  margin-right: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.koala-filter-tag.active {
+  background-color: var(--koala-green);
+  color: white;
+}
+
+.koala-filter-tag:hover {
   opacity: 0.9;
 }
 
@@ -49,24 +148,29 @@ button:hover {
 }
 
 .overflow-y-auto::-webkit-scrollbar-thumb {
-  background: #7EB4A3;
+  background: var(--koala-teal);
   border-radius: 10px;
 }
 
 .overflow-y-auto::-webkit-scrollbar-thumb:hover {
-  background: #95C93D;
+  background: var(--koala-green);
 }
 
 /* Table row hover effect */
+.review-row {
+  transition: background-color 0.2s ease;
+}
+
 .review-row:hover {
-  background-color: rgba(233, 245, 211, 0.5) !important;
+  background-color: rgba(149, 201, 61, 0.1) !important;
 }
 
 /* Chart tooltip customization */
 .recharts-tooltip-wrapper .recharts-default-tooltip {
   background-color: white !important;
-  border: 1px solid #7EB4A3 !important;
+  border: 1px solid var(--koala-teal) !important;
   border-radius: 5px !important;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1) !important;
 }
 
 /* Rating stars animation */
@@ -78,37 +182,40 @@ button:hover {
   transform: scale(1.1);
 }
 
-/* Card hover effects */
-.dashboard-card {
-  transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.dashboard-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-}
-
 /* Custom focus styles for inputs */
 input:focus, select:focus {
-  border-color: #95C93D !important;
+  border-color: var(--koala-green) !important;
   box-shadow: 0 0 0 3px rgba(149, 201, 61, 0.2) !important;
   outline: none;
 }
 
-/* Footer link hover effect */
-footer a {
-  transition: color 0.3s ease;
+/* Footer styling */
+.koala-footer {
+  margin-top: 2rem;
+  padding: 1.5rem;
+  text-align: center;
+  color: var(--koala-dark-blue);
 }
 
-footer a:hover {
-  color: #95C93D !important;
+.koala-footer a {
+  color: var(--koala-blue);
+  text-decoration: none;
+  margin: 0 0.5rem;
+  transition: color 0.2s ease;
+}
+
+.koala-footer a:hover {
+  color: var(--koala-green);
   text-decoration: underline;
 }
 
-/* Make sure to add these classes to your elements */
-.dashboard-card {
-  background-color: white;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .koala-header {
+    padding: 1rem;
+  }
+  
+  .koala-filter-tag {
+    margin-bottom: 0.5rem;
+  }
 }
