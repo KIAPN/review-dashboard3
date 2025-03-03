@@ -1,29 +1,44 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { 
+  BarChart, Bar, XAxis, YAxis, CartesianGrid, 
+  Tooltip, ResponsiveContainer
+} from 'recharts';
 import { Search, Star, Filter, ArrowUpDown, Calendar, HelpCircle } from 'lucide-react';
 import Papa from 'papaparse';
+import reviewsData from '../data/reviews.csv';
 
-// Import the KoalaLogo component
-import KoalaLogo from './KoalaLogo';
-
-// Import chart components
-import WordFrequencyChart from './charts/WordFrequencyChart';
-import RatingDistributionChart from './charts/RatingDistributionChart';
-
-// Koala brand colors from the brand guide
-const KOALA_COLORS = {
-  green: '#95C93D',      // Primary green
-  teal: '#7EB4A3',       // Teal accent
-  blue: '#73AADC',       // Light blue
-  darkBlue: '#043968',   // Dark blue
-  lightGreen: '#e9f5d3',  // Light green for backgrounds
-  lightTeal: '#e3f0eb',   // Light teal for backgrounds
-  lightBlue: '#e2eef8'    // Light blue for backgrounds
+// Move wordCategories outside the component so it doesn't get recreated on each render
+const WORD_CATEGORIES = {
+  Quality: ['professional', 'excellent', 'quality', 'great', 'thorough'],
+  Service: ['helpful', 'courteous', 'responsive', 'service', 'friendly'],
+  Technical: ['attic', 'foam', 'efficient'],
+  Performance: ['temperature', 'comfort', 'energy', 'cooling', 'heating', 'comfortable'],
 };
+
+// Words to focus on that convey praise and compliments
+const PRAISE_WORDS = [
+  'professional', 'excellent', 'great', 'quality', 'thorough', 
+  'knowledgeable', 'courteous', 'responsive', 'fantastic', 'helpful',
+  'amazing', 'impressed', 'recommend', 'efficient', 'friendly',
+  'outstanding', 'perfect', 'awesome', 'wonderful', 'exceptional',
+  // Adding performance-related words
+  'temperature', 'comfort', 'energy', 'cooling', 'heating', 'comfortable'
+];
+
+// Words to exclude from word frequency chart
+const EXCLUDED_WORDS = [
+  'insulation', 'koala', 'work', 'team', 'installation', 'them', 'after', 
+  'done', 'time', 'aldrick', 'mike', 'home', 'they', 'their', 'there', 
+  'were', 'with', 'from', 'have', 'very', 'would', 'about', 'also',
+  'that', 'this', 'what', 'just', 'your', 'will', 'some', 'when', 'into',
+  'only', 'then', 'than', 'should', 'could', 'house', 'attic', 'foam'
+];
 
 const ReviewDashboard = () => {
   const [reviews, setReviews] = useState([]);
   const [filteredReviews, setFilteredReviews] = useState([]);
   const [wordFrequencies, setWordFrequencies] = useState([]);
+  const [originalWordFrequencies, setOriginalWordFrequencies] = useState([]);
   const [wordCategory, setWordCategory] = useState('All');
   const [searchTerm, setSearchTerm] = useState('');
   const [sortField, setSortField] = useState('Date');
@@ -41,79 +56,10 @@ const ReviewDashboard = () => {
     oneStarCount: 0,
   });
 
-  // Use useMemo to prevent recreation of wordCategories on every render
-  const wordCategories = useMemo(() => ({
-    Quality: ['professional', 'excellent', 'quality', 'great', 'thorough'],
-    Service: ['helpful', 'courteous', 'responsive', 'service', 'friendly'],
-    Technical: ['insulation', 'attic', 'foam', 'efficient', 'installation'],
-    Performance: ['temperature', 'comfort', 'energy', 'cooling', 'heating'],
-  }), []); // Empty dependency array means this only runs once
-
-  useEffect(() => {
-    const loadReviews = async () => {
-      try {
-        let fileContent;
-        
-        // In production, import the CSV directly or fetch it from a public URL
-        if (process.env.NODE_ENV === 'production') {
-          // Option 1: If you can import the CSV file directly
-          // Add the CSV file to your public folder and fetch it
-          fileContent = await fetch('/data/reviews.csv')
-            .then(response => response.text());
-        } else {
-          // In development, use the window.fs method if available
-          fileContent = await window.fs.readFile('20250225_google_reviews_export copy.csv', { encoding: 'utf8' });
-        }
-        
-        Papa.parse(fileContent, {
-          header: true,
-          skipEmptyLines: true,
-          complete: (results) => {
-            const parsedReviews = results.data.map(review => {
-              // Convert rating text to number
-              let ratingNum = 5;
-              if (review.Rating === 'ONE') ratingNum = 1;
-              if (review.Rating === 'TWO') ratingNum = 2;
-              if (review.Rating === 'THREE') ratingNum = 3;
-              if (review.Rating === 'FOUR') ratingNum = 4;
-              if (review.Rating === 'FIVE') ratingNum = 5;
-              
-              // Parse date
-              const date = new Date(review.Date);
-              const formattedDate = date.toISOString().split('T')[0];
-              
-              return {
-                ...review,
-                ratingNum,
-                date: formattedDate,
-              };
-            });
-            
-            // Sort by date (most recent first)
-            const sortedReviews = parsedReviews.sort((a, b) => new Date(b.date) - new Date(a.date));
-            
-            setReviews(sortedReviews);
-            setFilteredReviews(sortedReviews);
-            calculateStats(sortedReviews);
-            calculateWordFrequencies(sortedReviews);
-            setLoading(false);
-          },
-          error: (error) => {
-            console.error('Error parsing CSV:', error);
-            setLoading(false);
-          }
-        });
-      } catch (error) {
-        console.error('Error reading file:', error);
-        setLoading(false);
-      }
-    };
-
-    loadReviews();
-  }, []);
-
-  const calculateStats = (reviewData) => {
+  const calculateStats = useCallback((reviewData) => {
     const total = reviewData.length;
+    if (total === 0) return;
+    
     const fiveStar = reviewData.filter(r => r.ratingNum === 5).length;
     const fourStar = reviewData.filter(r => r.ratingNum === 4).length;
     const threeStar = reviewData.filter(r => r.ratingNum === 3).length;
@@ -131,33 +77,117 @@ const ReviewDashboard = () => {
       twoStarCount: twoStar,
       oneStarCount: oneStar,
     });
-  };
+  }, []);
 
-  const calculateWordFrequencies = (reviewData) => {
-    const text = reviewData.map(r => r["Review Text"]).join(' ').toLowerCase();
+  const calculateWordFrequencies = useCallback((reviewData) => {
+    const text = reviewData.map(r => r["Review Text"] || "").join(' ').toLowerCase();
     const words = text.split(/\s+/).filter(w => w.length > 3);
     
-    const stopWords = ['this', 'that', 'they', 'their', 'there', 'were', 'with', 'from', 'have', 'very', 'would', 'about', 'also'];
-    
     const wordCount = {};
+    
+    // First pass - count all words
     words.forEach(word => {
       // Remove punctuation and only count words with letters
       const cleanWord = word.replace(/[^\w\s]/gi, '');
-      if (cleanWord && cleanWord.length > 3 && !stopWords.includes(cleanWord) && /[a-zA-Z]/.test(cleanWord)) {
+      if (cleanWord && 
+          cleanWord.length > 3 && 
+          !EXCLUDED_WORDS.includes(cleanWord) && 
+          /[a-zA-Z]/.test(cleanWord)) {
         wordCount[cleanWord] = (wordCount[cleanWord] || 0) + 1;
       }
     });
     
+    // Second pass - filter to only include praise words
+    const praiseWordCounts = {};
+    Object.keys(wordCount).forEach(word => {
+      if (PRAISE_WORDS.includes(word)) {
+        praiseWordCounts[word] = wordCount[word];
+      }
+    });
+    
     // Convert to array and sort
-    const wordFreqArray = Object.entries(wordCount)
+    const wordFreqArray = Object.entries(praiseWordCounts)
       .map(([word, count]) => ({ word, count }))
       .sort((a, b) => b.count - a.count)
-      .slice(0, 20);
+      .slice(0, 10); // Limit to top 10
     
     setWordFrequencies(wordFreqArray);
-  };
+    setOriginalWordFrequencies(wordFreqArray); // Save the original for filtering
+  }, []);
 
-  // Use useCallback to memoize the filterReviews function
+  useEffect(() => {
+    const loadReviews = async () => {
+      try {
+        // Load CSV data
+        fetch(reviewsData)
+          .then(response => response.text())
+          .then(csvText => {
+            Papa.parse(csvText, {
+              header: true,
+              skipEmptyLines: true,
+              complete: (results) => {
+                const parsedReviews = results.data.map(review => {
+                  // Convert rating text to number
+                  let ratingNum = 5;
+                  if (review.Rating === 'ONE') ratingNum = 1;
+                  if (review.Rating === 'TWO') ratingNum = 2;
+                  if (review.Rating === 'THREE') ratingNum = 3;
+                  if (review.Rating === 'FOUR') ratingNum = 4;
+                  if (review.Rating === 'FIVE') ratingNum = 5;
+                  
+                  // Parse date
+                  const date = new Date(review.Date);
+                  const formattedDate = date.toISOString().split('T')[0];
+                  
+                  return {
+                    ...review,
+                    ratingNum,
+                    date: formattedDate,
+                  };
+                });
+                
+                // Sort by date (most recent first)
+                const sortedReviews = parsedReviews.sort((a, b) => new Date(b.date) - new Date(a.date));
+                
+                setReviews(sortedReviews);
+                setFilteredReviews(sortedReviews);
+                calculateStats(sortedReviews);
+                calculateWordFrequencies(sortedReviews);
+                setLoading(false);
+              },
+              error: (error) => {
+                console.error('Error parsing CSV:', error);
+                setLoading(false);
+              }
+            });
+          })
+          .catch(error => {
+            console.error('Error fetching CSV file:', error);
+            setLoading(false);
+          });
+      } catch (error) {
+        console.error('Error loading reviews:', error);
+        setLoading(false);
+      }
+    };
+
+    loadReviews();
+  }, [calculateStats, calculateWordFrequencies]);
+
+  const handleCategoryChange = useCallback((category) => {
+    setWordCategory(category);
+    
+    if (category === 'All') {
+      setWordFrequencies(originalWordFrequencies);
+    } else {
+      const categoryWords = WORD_CATEGORIES[category];
+      const filteredFrequencies = originalWordFrequencies.filter(item => 
+        categoryWords.includes(item.word)
+      );
+      setWordFrequencies(filteredFrequencies);
+    }
+  }, [originalWordFrequencies]);
+
   const filterReviews = useCallback(() => {
     let filtered = [...reviews];
     
@@ -186,7 +216,7 @@ const ReviewDashboard = () => {
     
     // Apply word category filter
     if (wordCategory !== 'All') {
-      const categoryWords = wordCategories[wordCategory];
+      const categoryWords = WORD_CATEGORIES[wordCategory];
       filtered = filtered.filter(review => {
         if (!review["Review Text"]) return false;
         const reviewText = review["Review Text"].toLowerCase();
@@ -218,19 +248,7 @@ const ReviewDashboard = () => {
     
     // Recalculate stats for filtered reviews
     calculateStats(filtered);
-    
-    // If word category changed, don't recalculate word frequencies
-    if (wordCategory === 'All') {
-      calculateWordFrequencies(filtered);
-    } else {
-      // Filter word frequencies by category
-      const categoryWords = wordCategories[wordCategory];
-      const filteredFrequencies = wordFrequencies.filter(item => 
-        categoryWords.includes(item.word)
-      );
-      setWordFrequencies(filteredFrequencies);
-    }
-  }, [searchTerm, sortField, sortDirection, dateRange, ratingFilter, wordCategory, reviews, wordFrequencies, wordCategories]);
+  }, [reviews, searchTerm, sortField, sortDirection, dateRange, ratingFilter, wordCategory, calculateStats]);
 
   useEffect(() => {
     filterReviews();
@@ -267,88 +285,75 @@ const ReviewDashboard = () => {
     
     setDateRange({ start: startStr, end });
   };
-  
-  const getWordCategoryClass = (category) => {
-    return wordCategory === category
-      ? 'koala-filter-tag active'
-      : 'koala-filter-tag';
+
+  const renderStarRating = (rating) => {
+    const stars = [];
+    for (let i = 1; i <= 5; i++) {
+      stars.push(
+        <span key={i} className={`text-2xl ${i <= rating ? 'text-yellow-400' : 'text-gray-300'}`}>★</span>
+      );
+    }
+    return <div className="flex">{stars}</div>;
   };
 
-  const getPieChartData = () => [
-    { name: '5 Stars', value: stats.fiveStarCount },
-    { name: '4 Stars', value: stats.fourStarCount },
-    { name: '3 Stars', value: stats.threeStarCount },
-    { name: '2 Stars', value: stats.twoStarCount },
-    { name: '1 Star', value: stats.oneStarCount },
-  ];
+  const getWordCategoryClass = (category) => {
+    return wordCategory === category
+      ? 'bg-blue-600 text-white font-medium py-1 px-3 rounded-full mr-2'
+      : 'bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-1 px-3 rounded-full mr-2';
+  };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen koala-gradient-background">
+      <div className="flex items-center justify-center h-screen">
         <div className="text-center">
-          <div 
-            className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 mx-auto" 
-            style={{ borderColor: KOALA_COLORS.green }}
-          ></div>
-          <p className="mt-4 text-xl" style={{ color: KOALA_COLORS.darkBlue }}>Loading review data...</p>
+          <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-blue-500 mx-auto"></div>
+          <p className="mt-4 text-xl">Loading review data...</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 min-h-screen koala-gradient-background">
-      <header className="koala-header">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 
-              className="text-2xl font-bold"
-              style={{ color: KOALA_COLORS.darkBlue }}
-            >
-              Koala Insulation Reviews Analysis
-            </h1>
-            <p className="text-gray-600">Analyze customer feedback and sentiment trends</p>
-          </div>
-          <div className="w-48">
-            <KoalaLogo width={200} />
-          </div>
-        </div>
+    <div className="p-4 bg-gray-50 min-h-screen">
+      <header className="bg-white rounded-lg shadow p-4 mb-6">
+        <h1 className="text-2xl font-bold text-gray-800">Koala Insulation Reviews Analysis</h1>
+        <p className="text-gray-600">Analyze customer feedback and sentiment trends</p>
       </header>
-
+      
       {/* Filters Row */}
-      <div className="koala-card p-4 mb-6">
+      <div className="bg-white rounded-lg shadow p-4 mb-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center">
-            <Filter style={{ color: KOALA_COLORS.teal }} className="mr-2" size={18} />
-            <span style={{ color: KOALA_COLORS.darkBlue }} className="font-medium mr-3">Filters:</span>
+            <Filter className="text-gray-400 mr-2" size={18} />
+            <span className="text-gray-700 font-medium mr-3">Filters:</span>
             <div className="flex flex-wrap gap-2">
               <button 
                 className={getWordCategoryClass('All')}
-                onClick={() => setWordCategory('All')}
+                onClick={() => handleCategoryChange('All')}
               >
                 All
               </button>
               <button 
                 className={getWordCategoryClass('Quality')}
-                onClick={() => setWordCategory('Quality')}
+                onClick={() => handleCategoryChange('Quality')}
               >
                 Quality
               </button>
               <button 
                 className={getWordCategoryClass('Service')}
-                onClick={() => setWordCategory('Service')}
+                onClick={() => handleCategoryChange('Service')}
               >
                 Service
               </button>
               <button 
                 className={getWordCategoryClass('Technical')}
-                onClick={() => setWordCategory('Technical')}
+                onClick={() => handleCategoryChange('Technical')}
               >
                 Technical
               </button>
               <button 
                 className={getWordCategoryClass('Performance')}
-                onClick={() => setWordCategory('Performance')}
+                onClick={() => handleCategoryChange('Performance')}
               >
                 Performance
               </button>
@@ -357,10 +362,9 @@ const ReviewDashboard = () => {
           
           <div className="flex items-center space-x-4">
             <div className="relative">
-              <Calendar style={{ color: KOALA_COLORS.teal }} className="absolute left-3 top-1/2 transform -translate-y-1/2" size={16} />
+              <Calendar className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
               <select
                 className="pl-10 pr-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                style={{ borderColor: KOALA_COLORS.teal + '50' }}
                 onChange={handleDateRangeChange}
                 defaultValue="all"
               >
@@ -373,10 +377,9 @@ const ReviewDashboard = () => {
             </div>
             
             <div className="relative">
-              <Star style={{ color: KOALA_COLORS.teal }} className="absolute left-3 top-1/2 transform -translate-y-1/2" size={16} />
+              <Star className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
               <select
                 className="pl-10 pr-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500"
-                style={{ borderColor: KOALA_COLORS.teal + '50' }}
                 value={ratingFilter}
                 onChange={(e) => setRatingFilter(e.target.value)}
               >
@@ -390,12 +393,11 @@ const ReviewDashboard = () => {
             </div>
             
             <div className="relative">
-              <Search style={{ color: KOALA_COLORS.teal }} className="absolute left-3 top-1/2 transform -translate-y-1/2" size={16} />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
               <input
                 type="text"
                 placeholder="Search reviews..."
                 className="pl-10 pr-4 py-2 border rounded-lg focus:ring-blue-500 focus:border-blue-500 w-64"
-                style={{ borderColor: KOALA_COLORS.teal + '50' }}
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
               />
@@ -406,38 +408,38 @@ const ReviewDashboard = () => {
       
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-        <div className="koala-card koala-border-blue p-4 dashboard-card">
+        <div className="bg-white rounded-lg shadow p-4">
           <div className="flex items-center">
-            <div className="p-3 rounded-full" style={{ backgroundColor: `${KOALA_COLORS.blue}20` }}>
-              <Star style={{ color: KOALA_COLORS.blue }} size={24} />
+            <div className="bg-blue-100 p-3 rounded-full">
+              <Star className="text-blue-600" size={24} />
             </div>
             <div className="ml-4">
               <p className="text-gray-500 text-sm">Average Rating</p>
-              <p className="text-2xl font-bold" style={{ color: KOALA_COLORS.darkBlue }}>{stats.averageRating}</p>
+              <p className="text-2xl font-bold text-gray-800">{stats.averageRating}</p>
             </div>
           </div>
         </div>
         
-        <div className="koala-card koala-border-green p-4 dashboard-card">
+        <div className="bg-white rounded-lg shadow p-4">
           <div className="flex items-center">
-            <div className="p-3 rounded-full" style={{ backgroundColor: `${KOALA_COLORS.green}20` }}>
-              <HelpCircle style={{ color: KOALA_COLORS.green }} size={24} />
+            <div className="bg-green-100 p-3 rounded-full">
+              <HelpCircle className="text-green-600" size={24} />
             </div>
             <div className="ml-4">
               <p className="text-gray-500 text-sm">Total Reviews</p>
-              <p className="text-2xl font-bold" style={{ color: KOALA_COLORS.darkBlue }}>{stats.totalReviews}</p>
+              <p className="text-2xl font-bold text-gray-800">{stats.totalReviews}</p>
             </div>
           </div>
         </div>
         
-        <div className="koala-card koala-border-teal p-4 dashboard-card">
+        <div className="bg-white rounded-lg shadow p-4">
           <div className="flex items-center">
-            <div className="p-3 rounded-full" style={{ backgroundColor: `${KOALA_COLORS.teal}20` }}>
-              <Star style={{ color: KOALA_COLORS.teal }} size={24} />
+            <div className="bg-yellow-100 p-3 rounded-full">
+              <Star className="text-yellow-600" size={24} />
             </div>
             <div className="ml-4">
               <p className="text-gray-500 text-sm">5-Star Reviews</p>
-              <p className="text-2xl font-bold" style={{ color: KOALA_COLORS.darkBlue }}>
+              <p className="text-2xl font-bold text-gray-800">
                 {stats.fiveStarCount} 
                 <span className="text-sm font-normal text-gray-500 ml-1">
                   ({stats.totalReviews ? Math.round((stats.fiveStarCount / stats.totalReviews) * 100) : 0}%)
@@ -447,14 +449,14 @@ const ReviewDashboard = () => {
           </div>
         </div>
         
-        <div className="koala-card koala-border-dark-blue p-4 dashboard-card">
+        <div className="bg-white rounded-lg shadow p-4">
           <div className="flex items-center">
-            <div className="p-3 rounded-full" style={{ backgroundColor: `${KOALA_COLORS.darkBlue}15` }}>
-              <Star style={{ color: KOALA_COLORS.darkBlue }} size={24} />
+            <div className="bg-red-100 p-3 rounded-full">
+              <Star className="text-red-600" size={24} />
             </div>
             <div className="ml-4">
               <p className="text-gray-500 text-sm">Critical Reviews</p>
-              <p className="text-2xl font-bold" style={{ color: KOALA_COLORS.darkBlue }}>
+              <p className="text-2xl font-bold text-gray-800">
                 {stats.oneStarCount + stats.twoStarCount}
                 <span className="text-sm font-normal text-gray-500 ml-1">
                   ({stats.totalReviews ? Math.round(((stats.oneStarCount + stats.twoStarCount) / stats.totalReviews) * 100) : 0}%)
@@ -465,46 +467,56 @@ const ReviewDashboard = () => {
         </div>
       </div>
       
-      {/* Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-        {/* Word Frequency */}
-        <div className="koala-card p-4 lg:col-span-2" style={{ borderLeft: `4px solid ${KOALA_COLORS.green}` }}>
-          <h2 className="text-xl font-semibold mb-4" style={{ color: KOALA_COLORS.darkBlue }}>Word Frequency Analysis</h2>
-          <WordFrequencyChart data={wordFrequencies} />
-        </div>
-        
-        {/* Rating Distribution */}
-        <div className="koala-card p-4" style={{ borderLeft: `4px solid ${KOALA_COLORS.blue}` }}>
-          <h2 className="text-xl font-semibold mb-4" style={{ color: KOALA_COLORS.darkBlue }}>Rating Distribution</h2>
-          <RatingDistributionChart data={getPieChartData()} />
+      {/* Word Frequency Chart */}
+      <div className="bg-white rounded-lg shadow p-4 mb-6">
+        <h2 className="text-xl font-semibold mb-4">Word Frequency Analysis</h2>
+        <div className="h-80">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={wordFrequencies}
+              layout="vertical"
+              margin={{ top: 5, right: 30, left: 70, bottom: 5 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" />
+              <YAxis 
+                type="category" 
+                dataKey="word" 
+                width={80}
+                tick={{ fontSize: 12 }}
+              />
+              <Tooltip formatter={(value) => [`${value} mentions`, 'Frequency']} />
+              <Bar dataKey="count" fill="#4299e1" />
+            </BarChart>
+          </ResponsiveContainer>
         </div>
       </div>
       
       {/* Reviews Table */}
-      <div className="koala-card overflow-hidden">
-        <div className="p-4 border-b" style={{ borderColor: KOALA_COLORS.lightGreen, backgroundColor: KOALA_COLORS.lightGreen + '30' }}>
-          <h2 className="text-xl font-bold" style={{ color: KOALA_COLORS.darkBlue }}>All Reviews</h2>
+      <div className="bg-white rounded-lg shadow overflow-hidden">
+        <div className="p-4 border-b">
+          <h2 className="text-xl font-semibold">All Reviews</h2>
           <p className="text-gray-600">Showing {filteredReviews.length} of {reviews.length} reviews</p>
         </div>
         
         {/* Table Header */}
-        <div className="flex bg-gray-100 p-4 font-medium" style={{ color: KOALA_COLORS.darkBlue, backgroundColor: KOALA_COLORS.lightBlue + '30' }}>
-          <div className="w-36 cursor-pointer" onClick={() => handleSort('Date')}>
+        <div className="flex bg-gray-100 p-4 font-medium text-gray-700">
+          <div className="w-36" onClick={() => handleSort('Date')}>
             <button className="flex items-center">
               Date
-              <ArrowUpDown size={14} className="ml-1" style={{ color: KOALA_COLORS.blue }} />
+              <ArrowUpDown size={14} className="ml-1" />
             </button>
           </div>
-          <div className="w-32 cursor-pointer" onClick={() => handleSort('Rating')}>
+          <div className="w-32" onClick={() => handleSort('Rating')}>
             <button className="flex items-center">
               Rating
-              <ArrowUpDown size={14} className="ml-1" style={{ color: KOALA_COLORS.blue }} />
+              <ArrowUpDown size={14} className="ml-1" />
             </button>
           </div>
-          <div className="w-48 cursor-pointer" onClick={() => handleSort('Reviewer')}>
+          <div className="w-48" onClick={() => handleSort('Reviewer')}>
             <button className="flex items-center">
               Reviewer
-              <ArrowUpDown size={14} className="ml-1" style={{ color: KOALA_COLORS.blue }} />
+              <ArrowUpDown size={14} className="ml-1" />
             </button>
           </div>
           <div className="flex-1">Review</div>
@@ -520,25 +532,13 @@ const ReviewDashboard = () => {
             filteredReviews.map((review, index) => (
               <div 
                 key={index}
-                className="flex p-4 border-b border-gray-100 review-row"
-                style={{ 
-                  borderColor: '#f3f4f6',
-                  backgroundColor: index % 2 === 0 ? '#ffffff' : KOALA_COLORS.lightGreen + '10' 
-                }}
+                className="flex p-4 border-b border-gray-100 hover:bg-gray-50"
               >
                 <div className="w-36 text-gray-600">{review.date}</div>
-                <div className="w-32 star-rating">
-                  {Array.from({ length: 5 }).map((_, i) => (
-                    <span 
-                      key={i} 
-                      className={`text-2xl ${i < review.ratingNum ? '' : 'text-gray-300'}`}
-                      style={i < review.ratingNum ? { color: KOALA_COLORS.green } : {}}
-                    >
-                      ★
-                    </span>
-                  ))}
+                <div className="w-32">
+                  {renderStarRating(review.ratingNum)}
                 </div>
-                <div className="w-48 font-medium" style={{ color: KOALA_COLORS.darkBlue }}>
+                <div className="w-48 font-medium text-gray-800">
                   {review.Reviewer || 'Anonymous'}
                 </div>
                 <div className="flex-1 text-gray-700">
@@ -549,15 +549,6 @@ const ReviewDashboard = () => {
           )}
         </div>
       </div>
-
-      <footer className="koala-footer">
-        <p>© {new Date().getFullYear()} Koala Insulation - All Rights Reserved</p>
-        <div className="flex justify-center mt-2">
-          <a href="https://www.koalainsulation.com/privacy-policy" className="mx-2">Privacy Policy</a>
-          <a href="https://www.koalainsulation.com/terms" className="mx-2">Terms of Service</a>
-          <a href="https://www.koalainsulation.com/contact" className="mx-2">Contact Us</a>
-        </div>
-      </footer>
     </div>
   );
 };
